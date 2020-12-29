@@ -1,0 +1,91 @@
+name: Release Camunda Community Project on Maven Central
+description: Encapsulates the release process of Camunda community extensions
+inputs:
+  artifactsPattern:
+    description: Which artifacts to store. Set to empty string to disable.
+    required: false
+    default: ./target/nexus-staging/**/*.jar
+  runTests:
+    default: ""
+    required: false
+    description: Wether to explicitly run maven tests prior to releasing
+  mavenReleaseOptions:
+    description: Any extra Maven options for the release process (-DskipTests is already implied)
+    required: false
+    default: ""
+  releaseVersion:
+    description: Release Version (usually tag name). If empty, a SNAPSHOT (with the currently configured version) will be deployed.
+    required: false
+  gpgSigningKey:
+    description: Secret key for signing the Maven artifacts, in base64 form (will be decoded prior to import)
+    required: false
+  gpgSigningKeyPassphrase:
+    description: Passphrase for gpgSigningKey
+    required: false
+
+outputs:
+  artifactsArchive:
+    description: Filename of zipfile containing all files matched by artifactsPattern.
+    value: ${{ steps.createArchive.outputs.filename }}
+runs:
+  using: composite
+  steps:
+    - name: Initialize
+      run: |-
+        echo Repo: ${GITHUB_REPOSITORY}
+        git config --global user.name "Release Bot"
+        git config --global user.email actions@github.com
+    - name: Import secret key and cache passphrase
+      run: |-
+        echo 'GPG_FINGERPRINT<<EOF' >> $GITHUB_ENV
+        echo "${{ inputs.gpgSigningKey }}" | base64 -d | gpg --batch --import-options import-show --import | grep -E "\\w{40}" >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
+        pkill gpg-agent || /bin/true
+        gpg-agent --daemon --allow-preset-passphrase --default-cache-ttl 1 --max-cache-ttl 3600
+        for grip in $(gpg -K --with-colons --with-keygrip | grep grp | grep -oE "\w{40}"); do
+          echo "${{ inputs.gpgSigningKeyPasshprahse }}" | /usr/lib/gnupg2/gpg-preset-passphrase -c $grip
+        done
+    - name: Maybe run tests
+      run: |-
+        test -z "${{ inputs.runTests }}" && echo "::debug::Test execution is disabled." && exit 0
+        mvn
+    - name: Publish SNAPSHOT
+      run: |-
+        test -n "${{ inputs.releaseVersion }} " && echo "::debug::Not publishing SNAPSHOT because releaseVersion is set" && exit 0
+        mvn -B -DskipTests ${{ inputs.mavenReleaseOptions }} deploy
+        sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' target/nexus-staging/deferred/.index
+        mvn -B -DskipTests ${{ inputs.mavenReleaseOptions }} -s $GITHUB_WORKSPACE/settings.xml org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
+    - name: Publish Maven Release
+      run: |-
+        test -z "${{ inputs.releaseVersion }} " && echo "::debug::Skipping Release because releaseVersion is unset" && exit 0
+        # 1. set version
+        mvn -B versions:set versions:update-child-module -DnewVersion=${{ inputs.releaseVersion }}
+        # 2. perform release
+        mvn -B -DskipTests -s $GITHUB_WORKSPACE/settings.xml -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -DreleaseVersion=${{ inputs.releaseVersion }} -Dgpg.sign initialize \
+          package source:jar javadoc:jar \
+          deploy org.apache.maven.plugins:maven-gpg-plugin:sign \
+          nexus-staging:deploy
+        # 3. push new development version
+        mvn -B org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
+        git add "**pom.xml"
+        mvn -B scm:checkin -Dbasedir=. -Dmessage="release(v${{ inputs.releaseVersion }}): prepare for next development iteration" -DdeveloperConnectionUrl="scm:git:https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+    - name: Archive artifacts
+      run: |-
+        test -z "${{ inputs.artifactsPattern }} " && echo "::debug::Skipping archiving because artifactsPattern is unset" && exit 0
+        # Filename: [repo without org]-[version].zip
+        ZIPFILE={GITHUB_REPOSITORY#*/}-${{ inputs.releaseVersion }}.zip
+        zip $ZIPFILE $(find . -path ${{ inputs.artifactsPattern }})
+        echo "::set-output name=filename::${ZIPFILE}"
+      id: createArchive
+    # - name: Checkout ${{ github.event.repository.default_branch }} and commit new development version (Release only)
+    #   run: |-
+    #     test -z "${{ inputs.releaseVersion }} " && echo "::debug::Skipping version bump because releaseVersion is unset" && exit 0
+    #     git fetch
+    #     git checkout -b ${{ github.event.repository.default_branch }} --track origin/${{ github.event.repository.default_branch }}
+    #     mvn -B org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
+    #     git add "**pom.xml"
+    #     mvn -B scm:checkin -Dbasedir=. -Dmessage="release(v${{ github.event.release.tag_name }}): bump version" -DdeveloperConnectionUrl="scm:git:https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${{ github.event.repository.full_name }}.git"
+    - name: Cleanup gpg secret keys
+      run: |-
+        gpg --batch --yes --delete-secret-keys ${GPG_FINGERPRINT} || /bin/true
+        gpg --batch --yes --delete-keys ${GPG_FINGERPRINT} || /bin/true
