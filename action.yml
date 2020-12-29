@@ -35,14 +35,17 @@ runs:
         echo Repo: ${GITHUB_REPOSITORY}
         git config --global user.name "Release Bot"
         git config --global user.email actions@github.com
+        /usr/lib/gnupg2/gpg-preset-passphrase --version
       shell: bash
     - name: Import secret key and cache passphrase
       run: |-
+        pkill gpg-agent || /bin/true
+        gpg-agent --daemon --allow-preset-passphrase --default-cache-ttl 1 --max-cache-ttl 3600
+
         echo 'GPG_FINGERPRINT<<EOF' >> $GITHUB_ENV
         echo "${{ inputs.gpgSigningKey }}" | base64 -d | gpg --batch --import-options import-show --import | grep -E "\\w{40}" >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
-        pkill gpg-agent || /bin/true
-        gpg-agent --daemon --allow-preset-passphrase --default-cache-ttl 1 --max-cache-ttl 3600
+
         for grip in $(gpg -K --with-colons --with-keygrip | grep grp | grep -oE "\w{40}"); do
           echo "${{ inputs.gpgSigningKeyPasshprahse }}" | /usr/lib/gnupg2/gpg-preset-passphrase -c $grip
         done
