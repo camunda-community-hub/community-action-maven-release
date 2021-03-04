@@ -1,3 +1,8 @@
+
+![Community Extension](https://img.shields.io/badge/Community%20Extension-An%20open%20source%20community%20maintained%20project-FF4700)
+
+![Lifecycle](https://img.shields.io/badge/Lifecycle-Proof%20of%20Concept-blueviolet)
+
 # GitHub Action Supporting The Camunda Community Extensions Release Process
 
 ## Introduction
