@@ -11,10 +11,10 @@ if [ "$git_branch" == "master" ]; then
 fi
 
 # Set up release tag.
-read -p "Enter tag (example: v1.0.0) " git_tag
+read -rp "Enter tag (example: v1.0.0) " git_tag
 git push origin ":refs/tags/$git_tag"
 git tag -fa "$git_tag" -m "Release $git_tag"
-git push -u origin $git_tag
+git push -u origin "$git_tag"
 git push --tags
 
 echo "Done!"
