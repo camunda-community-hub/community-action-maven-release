@@ -35,6 +35,6 @@ jobs:
       - name: Perform release / deploy SNAPSHOT
         uses: camunda-community-hub/community-action-maven-release@v1.0.1
         with:
-          releaseVersion: ${{ github.event.release.tag_name }}
+          release-version: ${{ github.event.release.tag_name }}
         id: release
 ```

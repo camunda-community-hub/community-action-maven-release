@@ -1,25 +1,27 @@
 name: Release Camunda Community Project on Maven Central
 description: Encapsulates the release process of Camunda community extensions
 inputs:
-  artifactsPattern:
+  artifacts-pattern:
     description: Which artifacts to store. Set to empty string to disable.
     required: false
     default: ./target/nexus-staging/**/*.jar
-  runTests:
+  run-tests:
     default: ""
     required: false
     description: Wether to explicitly run maven tests prior to releasing
-  mavenReleaseOptions:
+  maven-release-options:
     description: Any extra Maven options for the release process (-DskipTests is already implied)
     required: false
     default: ""
-  releaseVersion:
+  release-version:
     description: Release Version (usually tag name). If empty, a SNAPSHOT (with the currently configured version) will be deployed.
     required: false
-
+  release-profile:
+    description: Maven profile to be selected for the release; typically "release".
+    required: false
 outputs:
   artifactsArchive:
-    description: Filename of zipfile containing all files matched by artifactsPattern.
+    description: Filename of zipfile containing all files matched by artifacts-pattern.
     value: ${{ steps.createArchive.outputs.filename }}
 runs:
   using: composite
@@ -29,56 +31,56 @@ runs:
         echo Repo: ${GITHUB_REPOSITORY}
         git config --global user.name "Release Bot"
         git config --global user.email actions@github.com
-        test -n "${{inputs.releaseProfile}}" && echo 'RELEASE_PROFILE=${{inputs.releaseProfile}}' >> $GITHUB_ENV
+        test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=${{inputs.release-profile}}' >> $GITHUB_ENV
         cp -v resources/settings.xml $HOME/.m2/
       shell: bash
-    - name: Maybe run tests
+    - name: Run maven
       run: |-
-        test -z "${{ inputs.runTests }}" && echo "::debug::Test execution is disabled." && exit 0
-        mvn
+        test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
+        mvn -B package ${SKIP_TESTS}
       shell: bash
     - name: Publish SNAPSHOT
       run: |-
-        test -n "${{ inputs.releaseVersion }}" && echo "::debug::Not publishing SNAPSHOT because releaseVersion is set" && exit 0
-        mvn -B -DskipTests ${{ inputs.mavenReleaseOptions }} deploy
+        test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
+        mvn -B -DskipTests ${{ inputs.maven-release-options }} deploy
         sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' target/nexus-staging/deferred/.index
-        mvn -B -DskipTests ${{ inputs.mavenReleaseOptions }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
+        mvn -B -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
       shell: bash
     - name: Publish Maven Release
       run: |-
-        test -z "${{ inputs.releaseVersion }}" && echo "::debug::Skipping Release because releaseVersion is unset" && exit 0
+        test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
         # 1. set version
-        mvn -B versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.releaseVersion }}
+        mvn -B versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
         # 2. perform release
-        mvn -B ${RELEASE_PROFILE} -DskipTests -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -DreleaseVersion=${{ inputs.releaseVersion }} -Dgpg.sign initialize \
+        mvn -B ${RELEASE_PROFILE} -DskipTests -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -Drelease-version=${{ inputs.release-version }} -Dgpg.sign initialize \
           package source:jar javadoc:jar \
           deploy org.apache.maven.plugins:maven-gpg-plugin:sign \
           nexus-staging:deploy
       shell: bash
     - name: Prepare next development version
       run: |-
-        test -z "${{ inputs.releaseVersion }}" && echo "::debug::Skipping Release because releaseVersion is unset" && exit 0
+        test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
         git fetch
         git checkout -b ${{ github.event.repository.default_branch }} --track origin/${{ github.event.repository.default_branch }}
         # ensure our release tag was created against default_branch; skip if not
-        [ "$(git rev-list -n1 ${{ github.event.release.tag_name }})" != "$(git rev-list -n1 ${{ github.event.repository.default_branch }})" ] && echo "${{ inputs.releaseVersion }} not pointing to tip of ${{ github.event.repository.default_branch }}" && exit 0
+        [ "$(git rev-list -n1 ${{ github.event.release.tag_name }})" != "$(git rev-list -n1 ${{ github.event.repository.default_branch }})" ] && echo "${{ inputs.release-version }} not pointing to tip of ${{ github.event.repository.default_branch }}" && exit 0
 
         mvn -B org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
         git add "**pom.xml"
-        mvn -B scm:checkin -Dbasedir=. -Dmessage="release(v${{ inputs.releaseVersion }}): prepare for next development iteration" -DdeveloperConnectionUrl="scm:git:https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        mvn -B scm:checkin -Dbasedir=. -Dmessage="release(v${{ inputs.release-version }}): prepare for next development iteration" -DdeveloperConnectionUrl="scm:git:https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
       shell: bash
     - name: Archive artifacts
       run: |-
-        test -z "${{ inputs.artifactsPattern }}" && echo "::debug::Skipping archiving because artifactsPattern is unset" && exit 0
+        test -z "${{ inputs.artifacts-pattern }}" && echo "::debug::Skipping archiving because artifacts-pattern is unset" && exit 0
         # Filename: [repo without org]-[version].zip
-        ZIPFILE=${GITHUB_REPOSITORY#*/}-${{ inputs.releaseVersion }}.zip
-        zip $ZIPFILE $(find . -path ${{ inputs.artifactsPattern }})
+        ZIPFILE=${GITHUB_REPOSITORY#*/}-${{ inputs.release-version }}.zip
+        zip $ZIPFILE $(find . -path ${{ inputs.artifacts-pattern }})
         echo "::set-output name=filename::${ZIPFILE}"
       shell: bash
       id: createArchive
     # - name: Checkout ${{ github.event.repository.default_branch }} and commit new development version (Release only)
     #   run: |-
-    #     test -z "${{ inputs.releaseVersion }} " && echo "::debug::Skipping version bump because releaseVersion is unset" && exit 0
+    #     test -z "${{ inputs.release-version }} " && echo "::debug::Skipping version bump because release-version is unset" && exit 0
     #     git fetch
     #     git checkout -b ${{ github.event.repository.default_branch }} --track origin/${{ github.event.repository.default_branch }}
     #     mvn -B org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
