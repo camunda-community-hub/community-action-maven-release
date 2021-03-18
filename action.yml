@@ -29,6 +29,8 @@ runs:
         echo Repo: ${GITHUB_REPOSITORY}
         git config --global user.name "Release Bot"
         git config --global user.email actions@github.com
+        test -n "${{inputs.releaseProfile}}" && echo 'RELEASE_PROFILE=${{inputs.releaseProfile}}' >> $GITHUB_ENV
+        cp -v resources/settings.xml $HOME/.m2/
       shell: bash
     - name: Maybe run tests
       run: |-
@@ -40,19 +42,27 @@ runs:
         test -n "${{ inputs.releaseVersion }}" && echo "::debug::Not publishing SNAPSHOT because releaseVersion is set" && exit 0
         mvn -B -DskipTests ${{ inputs.mavenReleaseOptions }} deploy
         sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' target/nexus-staging/deferred/.index
-        mvn -B -DskipTests ${{ inputs.mavenReleaseOptions }} -s $GITHUB_WORKSPACE/settings.xml org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
+        mvn -B -DskipTests ${{ inputs.mavenReleaseOptions }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
       shell: bash
     - name: Publish Maven Release
       run: |-
         test -z "${{ inputs.releaseVersion }}" && echo "::debug::Skipping Release because releaseVersion is unset" && exit 0
         # 1. set version
-        mvn -B versions:set versions:update-child-modules -DnewVersion=${{ inputs.releaseVersion }}
+        mvn -B versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.releaseVersion }}
         # 2. perform release
-        mvn -B -DskipTests -s $GITHUB_WORKSPACE/settings.xml -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -DreleaseVersion=${{ inputs.releaseVersion }} -Dgpg.sign initialize \
+        mvn -B ${RELEASE_PROFILE} -DskipTests -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -DreleaseVersion=${{ inputs.releaseVersion }} -Dgpg.sign initialize \
           package source:jar javadoc:jar \
           deploy org.apache.maven.plugins:maven-gpg-plugin:sign \
           nexus-staging:deploy
-        # 3. push new development version
+      shell: bash
+    - name: Prepare next development version
+      run: |-
+        test -z "${{ inputs.releaseVersion }}" && echo "::debug::Skipping Release because releaseVersion is unset" && exit 0
+        git fetch
+        git checkout -b ${{ github.event.repository.default_branch }} --track origin/${{ github.event.repository.default_branch }}
+        # ensure our release tag was created against default_branch; skip if not
+        [ "$(git rev-list -n1 ${{ github.event.release.tag_name }})" != "$(git rev-list -n1 ${{ github.event.repository.default_branch }})" ] && echo "${{ inputs.releaseVersion }} not pointing to tip of ${{ github.event.repository.default_branch }}" && exit 0
+
         mvn -B org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
         git add "**pom.xml"
         mvn -B scm:checkin -Dbasedir=. -Dmessage="release(v${{ inputs.releaseVersion }}): prepare for next development iteration" -DdeveloperConnectionUrl="scm:git:https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
