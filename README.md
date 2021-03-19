@@ -1,3 +1,5 @@
+![Lifecycle](https://img.shields.io/badge/Lifecycle-Proof%20of%20Concept-blueviolet)
+
 # GitHub Action Supporting The Camunda Community Extensions Release Process
 
 ## Introduction
