@@ -17,6 +17,12 @@ repos:
     hooks:
       - id: check-github-workflows
       - id: check-github-actions
+      - id: check-jsonschema
+        name: "Validate Example Workflows"
+        language: python
+        files: ^example-workflows/
+        types: [yaml]
+        args: ["--schemafile", "https://json.schemastore.org/github-workflow"]
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.12
     hooks:
