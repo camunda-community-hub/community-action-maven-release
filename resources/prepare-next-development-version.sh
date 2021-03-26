@@ -1,11 +1,12 @@
 #!/bin/bash
 
-[ $# != 2 ] && echo "::error::Not enough arguments for prepare-next-development-version" && exit 1
 
-RELEASE_VERSION=$1
-DEFAULT_BRANCH=$2
+RELEASE_VERSION=$2
+DEFAULT_BRANCH=$1
 
+[ $# != 2 ] && echo "::error::prepare-next-development-version needs exactly 2 arguments." && exit 1
 test -z "${RELEASE_VERSION}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
+test -z "${DEFAULT_BRANCH}" && echo "::error::Default branch needs to be passed" && exit 1
 
 git fetch --no-tags
 git checkout "${DEFAULT_BRANCH}"
