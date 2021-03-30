@@ -2,10 +2,10 @@
 
 set -e
 
-# Check if we're on master first.
+# Check if we're on main first.
 git_branch=$(git rev-parse --abbrev-ref HEAD)
-if [ "$git_branch" == "master" ]; then
-    echo "Cannot release from 'master' branch. Please checkout to a release branch!"
+if [ "$git_branch" == "main" ]; then
+    echo "Cannot release from 'main' branch. Please checkout to a release branch!"
     echo "Example: git checkout -b v1-release"
     exit 1
 fi

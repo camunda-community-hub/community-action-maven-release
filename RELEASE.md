@@ -1,6 +1,7 @@
 # Release a new version of this Action
 
-- checkout `master`
+- checkout `main`
+- checkout and publish a new branch, e.g. `release-v2`
 - run `.github/workflows/release.sh`:
   - it will ask you to enter the new version
 
