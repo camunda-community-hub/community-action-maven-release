@@ -44,7 +44,7 @@ jobs:
         uses: camunda-community-hub/community-action-maven-release@v1
         with:
           release-version: ${{ github.event.release.tag_name }}
-          release-profile: release
+          release-profile: community-action-maven-release
           nexus-usr: ${{ secrets.NEXUS_USR }}
           nexus-psw: ${{ secrets.NEXUS_PSW }}
           maven-usr: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_USR }}
@@ -63,3 +63,47 @@ jobs:
           asset_name: ${{ steps.release.outputs.artifacts_archive_path }}
           asset_content_type: application/zip
 ```
+### Prerequisites
+At the time of writing, projects need to use the `camunda-release-parent` in their POM:
+```xml
+  <parent>
+    <groupId>org.camunda</groupId>
+    <artifactId>camunda-release-parent</artifactId>
+    <version>3.7</version>
+    <relativePath />
+  </parent>
+```
+
+Furthermore, the following profile needs to be added:
+```
+  <profiles>
+    <profile>
+      <id>community-action-maven-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+                <execution>
+                    <id>sign-artifacts</id>
+                    <phase>verify</phase>
+                    <goals>
+                        <goal>sign</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <!-- Prevent gpg from using pinentry programs -->
+                <gpgArguments>
+                    <arg>--pinentry-mode</arg>
+                    <arg>loopback</arg>
+                </gpgArguments>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+  ```
