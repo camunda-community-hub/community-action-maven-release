@@ -75,7 +75,7 @@ At the time of writing, projects need to use the `camunda-release-parent` in the
 ```
 
 Furthermore, the following profile needs to be added:
-```
+```xml
   <profiles>
     <profile>
       <id>community-action-maven-release</id>
