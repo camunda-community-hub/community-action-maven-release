@@ -1,9 +1,12 @@
-![Lifecycle](https://img.shields.io/badge/Lifecycle-Proof%20of%20Concept-blueviolet)
+![Lifecycle](https://img.shields.io/badge/Lifecycle-Proof%20of%20Concept-blueviolet) 
 
+*Learn more about the 'Proof of Concept' lifecycle status label [here](https://github.com/Camunda-Community-Hub/community/blob/main/extension-lifecycle.md#proof-of-concept-)*
 
 # GitHub Action Supporting The Camunda Community Extensions Release Process
 
 ## Introduction
+
+*Note: Before continuing, we suggest [reading the release process documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD).*
 
 GitHub Actions currently (03/2021) have poor options for code sharing. This means that workflows have to be duplicated across repositories. This has the advantage of highly customizable workflows, on the other hand it makes maintaining workflows painful.
 
@@ -15,7 +18,10 @@ This means that things like actions/checkout or actions/setup-java still need to
 
 In order to effectively maintain a large number of repositories, an implementation around centrally maintained Composite Run Steps is favorable, and this repository aims to provide it. 
 
-## Usage
+> ![A BPMN diagram of the release workflow](https://github.com/camunda-community-hub/community/blob/main/assets/release-new-version.png)
+
+
+### Usage
 
 ```yaml
 name: Deploy artifacts with Maven
