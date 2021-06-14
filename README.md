@@ -1,12 +1,12 @@
-![Lifecycle](https://img.shields.io/badge/Lifecycle-Proof%20of%20Concept-blueviolet) 
+![Lifecycle](https://img.shields.io/badge/Lifecycle-Proof%20of%20Concept-blueviolet)
 
-*Learn more about the 'Proof of Concept' lifecycle status label [here](https://github.com/Camunda-Community-Hub/community/blob/main/extension-lifecycle.md#proof-of-concept-)*
+_Learn more about the 'Proof of Concept' lifecycle status label [here](https://github.com/Camunda-Community-Hub/community/blob/main/extension-lifecycle.md#proof-of-concept-)_
 
 # GitHub Action Supporting The Camunda Community Extensions Release Process
 
 ## Introduction
 
-*Note: Before continuing, we suggest [reading the release process documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD).*
+_Note: Before continuing, we suggest [reading the release process documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD)._
 
 GitHub Actions currently (03/2021) have poor options for code sharing. This means that workflows have to be duplicated across repositories. This has the advantage of highly customizable workflows, on the other hand it makes maintaining workflows painful.
 
@@ -16,10 +16,9 @@ However, those Composite Run Steps [don’t yet allow for using arbitrary action
 
 This means that things like actions/checkout or actions/setup-java still need to be done individually. However, it is usually those steps that require the most customization anyway.
 
-In order to effectively maintain a large number of repositories, an implementation around centrally maintained Composite Run Steps is favorable, and this repository aims to provide it. 
+In order to effectively maintain a large number of repositories, an implementation around centrally maintained Composite Run Steps is favorable, and this repository aims to provide it.
 
 > ![A BPMN diagram of the release workflow](https://github.com/camunda-community-hub/community/blob/main/assets/release-new-version.png)
-
 
 ### Usage
 
@@ -71,8 +70,11 @@ jobs:
           asset_name: ${{ steps.release.outputs.artifacts_archive_path }}
           asset_content_type: application/zip
 ```
+
 ### Prerequisites
+
 At the time of writing, projects need to use the `camunda-release-parent` in their POM:
+
 ```xml
   <parent>
     <groupId>org.camunda</groupId>
@@ -83,6 +85,7 @@ At the time of writing, projects need to use the `camunda-release-parent` in the
 ```
 
 Furthermore, the following profile needs to be added:
+
 ```xml
   <profiles>
     <profile>
@@ -114,12 +117,10 @@ Furthermore, the following profile needs to be added:
       </build>
     </profile>
   </profiles>
-  ```
+```
+
 ### Troubleshooting
 
 1. If you are facing any issues regarding your extension's release process, please [open an issue](https://github.com/camunda-community-hub/community-action-maven-release/issues) and assign it to [@celanthe](https://github.com/celanthe) with applicable issue labels applied.
 2. If you see an update or improvement that can be made to the release process in the Camunda Community Hub, we encourage you to submit an issue with your request, and thank you for your suggestion!
 3. Please make use of the [Camunda Community Hub Pull Request Template](https://github.com/camunda-community-hub/community/issues/new?assignees=&labels=&template=camunda-community-hub-pull-request-template.md&title=Pull+Request) when opening a troubleshooting pull request and include as much information as possible in order to help reviewers better understand the issue you are facing.
-
-
-
