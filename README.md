@@ -73,51 +73,17 @@ jobs:
 
 ### Prerequisites
 
-At the time of writing, projects need to use the `camunda-release-parent` in their POM:
+Any project needs to use the [community-hub-release-parent](https://github.com/camunda-community-hub/community-hub-release-parent) in their POM:
 
 ```xml
-  <parent>
-    <groupId>org.camunda</groupId>
-    <artifactId>camunda-release-parent</artifactId>
-    <version>3.7</version>
-    <relativePath />
-  </parent>
+<parent>
+    <groupId>org.camunda.community</groupId>
+    <artifactId>community-hub-release-parent</artifactId>
+    <version>1.0.0</version>
+</parent>
 ```
 
-Furthermore, the following profile needs to be added:
-
-```xml
-  <profiles>
-    <profile>
-      <id>community-action-maven-release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
-            <executions>
-                <execution>
-                    <id>sign-artifacts</id>
-                    <phase>verify</phase>
-                    <goals>
-                        <goal>sign</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                <!-- Prevent gpg from using pinentry programs -->
-                <gpgArguments>
-                    <arg>--pinentry-mode</arg>
-                    <arg>loopback</arg>
-                </gpgArguments>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
-```
+This parent POM contains all necessary settings for the GitHub action to function properly.
 
 ### Troubleshooting
 
