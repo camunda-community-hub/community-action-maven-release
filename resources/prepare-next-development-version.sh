@@ -21,8 +21,11 @@ git commit -am "release(v${RELEASE_VERSION})"
 git tag -fa "${RELEASE_VERSION}" -m "release(v${RELEASE_VERSION})"
 git push origin --tags -f
 
-mvn -B org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
-
+  mvn -B ${{ maven-additional-options:
+    description: Any extra Maven options
+    required: false
+    default: "" }} ...
+    
 # Commit next version calculated by maven
 # https://maven.apache.org/guides/getting-started/index.html#what-is-a-snapshot-version
 git add ./**pom.xml
