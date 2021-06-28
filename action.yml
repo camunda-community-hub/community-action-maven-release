@@ -55,7 +55,10 @@ runs:
     - name: Run maven
       run: |-
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
-        mvn -B package ${SKIP_TESTS}
+      mvn -B ${{ maven-additional-options:
+    description: Any extra Maven options
+    required: false
+    default: "" }} ...
       shell: bash
     - name: Publish SNAPSHOT
       run: |-
