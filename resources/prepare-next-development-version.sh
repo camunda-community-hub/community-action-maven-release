@@ -3,6 +3,7 @@
 
 RELEASE_VERSION=$2
 DEFAULT_BRANCH=$1
+MAVEN_ADDITIONAL_OPTIONS=$3
 
 [ $# != 2 ] && echo "::error::prepare-next-development-version needs exactly 2 arguments." && exit 1
 test -z "${RELEASE_VERSION}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
@@ -20,11 +21,6 @@ git commit -am "release(v${RELEASE_VERSION})"
 # Overwrite existing release tag that was created to trigger this function with release version in pom.xml
 git tag -fa "${RELEASE_VERSION}" -m "release(v${RELEASE_VERSION})"
 git push origin --tags -f
-
-  mvn -B ${{ maven-additional-options:
-    description: Any extra Maven options
-    required: false
-    default: "" }} ...
     
 # Commit next version calculated by maven
 # https://maven.apache.org/guides/getting-started/index.html#what-is-a-snapshot-version
