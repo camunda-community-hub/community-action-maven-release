@@ -3,8 +3,9 @@
 
 RELEASE_VERSION=$2
 DEFAULT_BRANCH=$1
+MAVEN_ADDITIONAL_OPTIONS=$3
 
-[ $# != 2 ] && echo "::error::prepare-next-development-version needs exactly 2 arguments." && exit 1
+[ $# != 3 ] && echo "::error::prepare-next-development-version needs exactly 3 arguments." && exit 1
 test -z "${RELEASE_VERSION}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
 test -z "${DEFAULT_BRANCH}" && echo "::error::Default branch needs to be passed" && exit 1
 
@@ -21,7 +22,7 @@ git commit -am "release(v${RELEASE_VERSION})"
 git tag -fa "${RELEASE_VERSION}" -m "release(v${RELEASE_VERSION})"
 git push origin --tags -f
 
-mvn -B org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
+mvn -B ${MAVEN_ADDITIONAL_OPTIONS} org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
 
 # Commit next version calculated by maven
 # https://maven.apache.org/guides/getting-started/index.html#what-is-a-snapshot-version
