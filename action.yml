@@ -87,7 +87,7 @@ runs:
         MAVEN_PSW: ${{ inputs.maven-psw }}
         MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
     - name: Prepare next development version
-      run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ github.event.repository.default_branch }}" "${{ inputs.release-version }}"
+run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ github.event.repository.default_branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }"
       shell: bash
     - name: Archive artifacts
       run: |-
