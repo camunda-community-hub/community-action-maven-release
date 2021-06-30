@@ -12,7 +12,7 @@ inputs:
   maven-release-options:
     description: Any extra Maven options for the release process (-DskipTests is already implied)
     required: false
-    default: ""
+    default: "mvn -B ${{ maven-additional-options }} package ${SKIP_TESTS}"
   release-version:
     description: Release Version (usually tag name). If empty, a SNAPSHOT (with the currently configured version) will be deployed.
     required: false
@@ -55,7 +55,6 @@ runs:
     - name: Run maven
       run: |-
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
-      mvn -B ${{ inputs.maven-additional-options }} package ${SKIP_TESTS}
       shell: bash
     - name: Publish SNAPSHOT
       run: |-
