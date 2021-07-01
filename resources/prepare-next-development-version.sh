@@ -22,6 +22,7 @@ git commit -am "release(v${RELEASE_VERSION})"
 git tag -fa "${RELEASE_VERSION}" -m "release(v${RELEASE_VERSION})"
 git push origin --tags -f
 
+# shellcheck disable=SC2086 # don't use quotes because we do want argument splitting
 mvn -B ${MAVEN_ADDITIONAL_OPTIONS} org.apache.maven.plugins:maven-release-plugin:update-versions -DgenerateBackupPoms=false
 
 # Commit next version calculated by maven
