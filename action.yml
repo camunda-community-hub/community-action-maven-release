@@ -9,6 +9,10 @@ inputs:
     default: ""
     required: false
     description: Wether to explicitly run maven tests prior to releasing
+  maven-additional-options:
+    description: Any extra Maven options
+    required: false
+    default: ""
   maven-release-options:
     description: Any extra Maven options for the release process (-DskipTests is already implied)
     required: false
@@ -55,14 +59,14 @@ runs:
     - name: Run maven
       run: |-
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
-        mvn -B package ${SKIP_TESTS}
+        mvn -B ${{ inputs.maven-additional-options }} package ${SKIP_TESTS}
       shell: bash
     - name: Publish SNAPSHOT
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
-        mvn -B -DskipTests ${{ inputs.maven-release-options }} deploy
+        mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
         sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' target/nexus-staging/deferred/.index
-        mvn -B -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
+        mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
@@ -73,9 +77,9 @@ runs:
       run: |-
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
         # 1. set version
-        mvn -B versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
+        mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
         # 2. perform release
-        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-release-options }} -DskipTests -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -Drelease-version=${{ inputs.release-version }} -Dgpg.sign initialize \
+        mvn -B ${{ inputs.maven-additional-options }} ${RELEASE_PROFILE} ${{ inputs.maven-release-options }} -DskipTests -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -Drelease-version=${{ inputs.release-version }} -Dgpg.sign initialize \
           package source:jar javadoc:jar \
           deploy org.apache.maven.plugins:maven-gpg-plugin:sign \
           nexus-staging:deploy
@@ -87,7 +91,7 @@ runs:
         MAVEN_PSW: ${{ inputs.maven-psw }}
         MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
     - name: Prepare next development version
-      run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ github.event.repository.default_branch }}" "${{ inputs.release-version }}"
+      run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ github.event.repository.default_branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }}"
       shell: bash
     - name: Archive artifacts
       run: |-
