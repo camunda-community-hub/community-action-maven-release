@@ -8,7 +8,7 @@ _Learn more about the 'Proof of Concept' lifecycle status label [here](https://g
 
 _Note: Before continuing, we suggest [reading the release process documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD)._
 
-GitHub Actions currently (03/2021) have poor options for code sharing. This means that workflows have to be duplicated across repositories. This has the advantage of highly customizable workflows, on the other hand it makes maintaining workflows painful.
+GitHub Actions currently has poor options for code sharing. This means that workflows have to be duplicated across repositories. This has the advantage of highly customizable workflows, on the other hand it makes maintaining workflows painful.
 
 Composite Run Steps have been added to alleviate this shortcoming, as they allow for wrapping multiple shell-only steps into one “pseudo action”. This can either be hosted in the same or a shared repository.
 
