@@ -65,7 +65,7 @@ runs:
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
         mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
-        sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' target/nexus-staging/deferred/.index
+        find . -path '**target/nexus-staging/deferred/.index' -exec sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' {} +
         mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
       shell: bash
       env:
