@@ -41,6 +41,10 @@ inputs:
   github-token:
     description: GitHub token
     required: true
+    maven-build-options:
+  description: Any extra Maven options for the initial build process
+  required: false
+  default: ""
 outputs:
   artifacts_archive_path:
     description: Filename of zipfile containing all files matched by artifacts-pattern.
