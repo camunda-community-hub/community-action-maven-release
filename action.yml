@@ -65,41 +65,37 @@ runs:
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
         mvn -B ${{ inputs.maven-additional-options }} ${{ inputs.maven-build-options }} package ${SKIP_TESTS}
       shell: bash
-    - name: Trivy Security Scanning
-      on:
-        push:
-          branches: [ master ]
-        pull_request:
-          branches: [ master ]
-  jobs:
-   build:
+- name: Run Trivy Security Scan
+  on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+    jobs:
+    build:
     runs-on: ubuntu-18.04
     steps:
     uses: aquasecurity/trivy-action@master
- - name: Run Trivy vulnerability scanner in repo mode
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        ignore-unfixed: true
-        format: 'template'
-        template: '@/contrib/sarif.tpl'
-        output: 'trivy-results.sarif'
-        # exit code when vulnerabilities are found
-        exit-code: 0
-        # severity of vulnerabilities
-        severity: 'UNKNOWN,LOW,MEDIUM'
- - name: Run Trivy scan in repo mode high and critical severity
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        ignore-unfixed: true
-        format: 'template'
-        template: '@/contrib/sarif.tpl'
-        output: 'trivy-results.sarif'
-        # exit code when vulnerabilities are found
-        exit-code: 1
-        # severity of vulnerabilities
-        severity: 'HIGH,CRITICAL'
+- name: Run Trivy Scan in Repo Mode - Unknown, Low, and Medium Severity
+  uses: aquasecurity/trivy-action@master
+  with:
+    scan-type: 'fs'
+    ignore-unfixed: true
+    format: 'template'
+    template: '@/contrib/sarif.tpl'
+    output: 'trivy-results.sarif'
+    exit-code: 0
+    severity: UNKNOWN,LOW,MEDIUM
+- name: Run Trivy Scan in Repo Mode - High and Critical Severity
+  uses: aquasecurity/trivy-action@master
+  with:
+    scan-type: 'fs'
+    ignore-unfixed: true
+    format: 'template'
+    template: '@/contrib/sarif.tpl'
+    output: 'trivy-results.sarif'
+    exit-code: 1
+    severity: HIGH,CRITICAL
     - name: Publish SNAPSHOT
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
