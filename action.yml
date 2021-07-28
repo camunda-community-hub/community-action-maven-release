@@ -1,4 +1,4 @@
-name: Release Camunda Community Project on Maven Central
+- name: Release Camunda Community Project on Maven Central
 description: Encapsulates the release process of Camunda community extensions
 inputs:
   artifacts-pattern:
