@@ -45,6 +45,10 @@
     description: Any extra Maven options for the initial build process
     required: false
     default: ""
+  vulnerability-scan:
+    description: TODO
+    required: false
+    default: true
   outputs:
   artifacts_archive_path:
     description: Filename of zipfile containing all files matched by artifacts-pattern.
@@ -73,26 +77,8 @@
   run: |
     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b ${GITHUB_WORKSPACE}
     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/sarif.tpl -o sarif.tpl
-- name: Run Trivy Scan in Repo Mode - Unknown, Low, and Medium Severity
-  uses: aquasecurity/trivy-action@master
-  with:
-    scan-type: "fs"
-    ignore-unfixed: true
-    format: "template"
-    template: "@/contrib/sarif.tpl"
-    output: "trivy-results.sarif"
-    exit-code: 0
-    severity: UNKNOWN,LOW,MEDIUM
-- name: Run Trivy Scan in Repo Mode - High and Critical Severity
-  uses: aquasecurity/trivy-action@master
-  with:
-    scan-type: "fs"
-    ignore-unfixed: true
-    format: "template"
-    template: "@/contrib/sarif.tpl"
-    output: "trivy-results.sarif"
-    exit-code: 1
-    severity: HIGH,CRITICAL
+    trivy --version
+    exit 1
 - name: Publish SNAPSHOT
   run: |-
     test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
