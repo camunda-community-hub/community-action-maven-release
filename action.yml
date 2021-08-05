@@ -75,10 +75,21 @@
 - name: Download and Install Trivy
   shell: bash
   run: |
-    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b ${GITHUB_WORKSPACE}
-    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/sarif.tpl -o sarif.tpl
-    trivy --version
-    exit 1
+    if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
+    then
+      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b ${GITHUB_WORKSPACE}
+      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/sarif.tpl -o sarif.tpl
+      ./trivy --version
+      ./trivy fs -t @sarif.tpl -f template -o trivy-results.sarif .
+
+      if [[ $(cat trivy-results.sarif | grep -E 'Severity: (HIGH|CRITICAL)' | wc -l) > 0 ]];
+      then
+        ./trivy fs .
+        exit 1
+      else
+        exit 0
+      fi
+    fi
 - name: Publish SNAPSHOT
   run: |-
     test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
