@@ -2,7 +2,7 @@ name: Release Camunda Community Project on Maven Central
 description: Encapsulates the release process of Camunda community extensions
 inputs:
   artifacts-pattern:
-    description: Which artifacts to store. Set to empty string to disable.
+    description: Which artifacts to store. Set to empty string to disable
     required: false
     default: ./target/nexus-staging/**/*.jar
   run-tests:
@@ -45,6 +45,10 @@ inputs:
     description: Any extra Maven options for the initial build process
     required: false
     default: ""
+  vulnerability-scan:
+    description: TODO
+    required: false
+    default: "false"
 outputs:
   artifacts_archive_path:
     description: Filename of zipfile containing all files matched by artifacts-pattern.
@@ -65,6 +69,27 @@ runs:
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
         mvn -B ${{ inputs.maven-additional-options }} ${{ inputs.maven-build-options }} package ${SKIP_TESTS}
       shell: bash
+      ###########################################
+      # Download and install Trivy and template #
+      ###########################################
+    - name: Download and Install Trivy
+      shell: bash
+      run: |
+        if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
+        then
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b ${GITHUB_WORKSPACE}
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/sarif.tpl -o sarif.tpl
+          ./trivy --version
+          ./trivy fs -t @sarif.tpl -f template -o trivy-results.sarif .
+
+          if [[ $(cat trivy-results.sarif | grep -E 'Severity: (HIGH|CRITICAL)' | wc -l) > 0 ]];
+          then
+            ./trivy fs .
+            exit 1
+          else
+            exit 0
+          fi
+        fi
     - name: Publish SNAPSHOT
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
