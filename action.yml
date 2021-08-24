@@ -91,9 +91,18 @@ runs:
           fi
         fi
     - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v1
-       with:
-        sarif_file: trivy-results.sarif
+      shell: bash
+      run: |
+        if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
+        then
+          COMPRESSED_SARIF=$(gzip -c trivy-results.sarif | base64 -w0)
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "authorization: Bearer ${{ inputs.github-token }}" \
+            https://api.github.com/repos/${GITHUB_REPOSITORY}/code-scanning/sarifs \
+            -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
+        fi
     - name: Publish SNAPSHOT
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
