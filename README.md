@@ -30,7 +30,7 @@ The [v1.0.7 release](https://github.com/camunda-community-hub/community-action-m
 
 ### Usage
 
-Important hint: If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: ss01.oss.sonatype.org`
+Important hint: If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: s01.oss.sonatype.org`
 
 ```yaml
 name: Deploy artifacts with Maven
