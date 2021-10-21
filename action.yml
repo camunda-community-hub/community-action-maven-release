@@ -49,6 +49,10 @@ inputs:
     description: TODO
     required: false
     default: "false"
+  maven-url:
+    description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under ss01.oss.sonatype.org
+    required: false
+    default: "oss.sonatype.org"
 outputs:
   artifacts_archive_path:
     description: Filename of zipfile containing all files matched by artifacts-pattern.
@@ -107,7 +111,7 @@ runs:
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
         mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
-        find . -path '**target/nexus-staging/deferred/.index' -exec sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' {} +
+        find . -path '**target/nexus-staging/deferred/.index' -exec sed -i 's@:camunda-nexus:.*$@:central:https://${{inputs.maven-url}}/content/repositories/snapshots/@g' {} +
         mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
       shell: bash
       env:
@@ -121,7 +125,7 @@ runs:
         # 1. set version
         mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
         # 2. perform release
-        mvn -B ${{ inputs.maven-additional-options }} ${RELEASE_PROFILE} ${{ inputs.maven-release-options }} -DskipTests -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -Drelease-version=${{ inputs.release-version }} -Dgpg.sign initialize \
+        mvn -B ${{ inputs.maven-additional-options }} ${RELEASE_PROFILE} ${{ inputs.maven-release-options }} -DskipTests -DnexusUrl=https://${{inputs.maven-url}}/ -DserverId=central -Drelease-version=${{ inputs.release-version }} -Dgpg.sign initialize \
           package source:jar javadoc:jar \
           deploy org.apache.maven.plugins:maven-gpg-plugin:sign \
           nexus-staging:deploy
