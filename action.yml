@@ -50,7 +50,7 @@ inputs:
     required: false
     default: "false"
   maven-url:
-    description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under ss01.oss.sonatype.org
+    description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under s01.oss.sonatype.org
     required: false
     default: "oss.sonatype.org"
 outputs:
