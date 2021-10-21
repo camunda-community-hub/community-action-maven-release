@@ -21,8 +21,13 @@ inputs:
     description: Release Version (usually tag name). If empty, a SNAPSHOT (with the currently configured version) will be deployed.
     required: false
   release-profile:
-    description: Maven profile to be selected for the release; typically "release".
+    description: Maven profile to be selected for the release; typically "community-action-maven-release".
     required: false
+    default: "community-action-maven-release"
+  central-release-profile:
+    description: Maven profile to be selected for the release to Maven Central; typically "oss-maven-central".
+    required: false
+    default: "oss-maven-central"
   nexus-usr:
     description: Camunda Nexus username
     required: true
@@ -66,6 +71,7 @@ runs:
         git config --global user.name "Release Bot"
         git config --global user.email actions@github.com
         test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=-P${{inputs.release-profile}}' >> $GITHUB_ENV
+        test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> $GITHUB_ENV
         cp -v ${{ github.action_path }}/resources/settings.xml $HOME/.m2/
       shell: bash
     - name: Run maven
@@ -122,10 +128,12 @@ runs:
     - name: Publish Maven Release
       run: |-
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
-        # 1. set version
+        echo "Set version to ${{ inputs.release-version }}"
         mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
-        # 2. deploy release to Maven Central
-        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} -DnexusUrl=https://${{inputs.maven-url}}/ -DserverId=central deploy
+        echo "Deploy release to Camunda Repository using ${{inputs.release-profile}} profile"
+        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
+        echo "Deply release to Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
+        mvn -B ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests -DnexusUrl=https://${{inputs.maven-url}}/  ${{ inputs.maven-release-options }} deploy
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
