@@ -49,6 +49,10 @@ inputs:
     description: TODO
     required: false
     default: "false"
+  maven-url:
+    description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under ss01.oss.sonatype.org
+    required: false
+    default: "oss.sonatype.org"
 outputs:
   artifacts_archive_path:
     description: Filename of zipfile containing all files matched by artifacts-pattern.
@@ -84,11 +88,9 @@ runs:
       run: |-
         echo "::group::Publish SNAPSHOT"
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
-        mvn -B -DskipTests ${{ inputs.maven-release-options }} deploy
-        sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' target/nexus-staging/deferred/.index
-        mvn -B -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
-        echo ::endgroup::
-
+        mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
+        find . -path '**target/nexus-staging/deferred/.index' -exec sed -i 's@:camunda-nexus:.*$@:central:https://${{inputs.maven-url}}/content/repositories/snapshots/@g' {} +
+        mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
@@ -101,10 +103,9 @@ runs:
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
         echo "::group::Publish Release"
         # 1. set version
-        mvn -B versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
+        mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
         # 2. deploy release to Maven Central
-        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-release-options }} -DskipTests -DnexusUrl=https://oss.sonatype.org/ -DserverId=central deploy
-        echo ::endgroup::
+        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} -DnexusUrl=https://oss.sonatype.org/ -DserverId=central deploy
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
