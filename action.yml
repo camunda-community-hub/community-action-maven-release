@@ -125,7 +125,7 @@ runs:
         # 1. set version
         mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
         # 2. deploy release to Maven Central
-        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} -DnexusUrl=https://oss.sonatype.org/ -DserverId=central deploy
+        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} -DnexusUrl=https://${{inputs.maven-url}}/ -DserverId=central deploy
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
