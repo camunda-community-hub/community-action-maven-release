@@ -87,7 +87,7 @@ Any project needs to use the [community-hub-release-parent](https://github.com/c
 <parent>
     <groupId>org.camunda.community</groupId>
     <artifactId>community-hub-release-parent</artifactId>
-    <version>1.0.0</version>
+    <version>1.2.0</version>
 </parent>
 ```
 
