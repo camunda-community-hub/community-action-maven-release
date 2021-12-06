@@ -113,7 +113,7 @@ runs:
             https://api.github.com/repos/${GITHUB_REPOSITORY}/code-scanning/sarifs \
             -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
         fi
-     name: actions tagger
+    - name: actions tagger
       on:
         release:
           types: [published, edited]
@@ -121,9 +121,9 @@ runs:
         actions-tagger:
             runs-on: windows-latest
         steps:
-      - uses: Actions-R-Us/actions-tagger@latest
-        with:
-          publish_latest_tag: true
+      uses: Actions-R-Us/actions-tagger@latest
+      with: 
+        publish_latest_tag: true
     - name: Publish SNAPSHOT
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
