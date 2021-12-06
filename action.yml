@@ -51,7 +51,7 @@ inputs:
     required: false
     default: ""
   vulnerability-scan:
-    description: TODO
+    description: Vulnerability scanning using Aqua Security Trivy
     required: false
     default: "false"
   maven-url:
@@ -113,6 +113,8 @@ runs:
             https://api.github.com/repos/${GITHUB_REPOSITORY}/code-scanning/sarifs \
             -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
         fi
+    - name: Actions Tagger
+      uses: Actions-R-Us/actions-tagger@v2.0.2
     - name: Publish SNAPSHOT
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
