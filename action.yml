@@ -114,7 +114,7 @@ runs:
             -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
         fi
     - name: Actions tagger
-        uses: Actions-R-Us/actions-tagger@latest with: publish_latest_tag: true
+      uses: "Actions-R-Us/actions-tagger@latest with: publish_latest_tag: true"
     - name: Publish SNAPSHOT
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
