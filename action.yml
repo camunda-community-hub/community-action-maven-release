@@ -17,9 +17,10 @@ inputs:
     description: Any extra Maven options for the release process (-DskipTests is already implied)
     required: false
     default: ""
-  release-version:
+  release-version: 
     description: Release Version (usually tag name). If empty, a SNAPSHOT (with the currently configured version) will be deployed.
     required: false
+    default: "latest"
   release-profile:
     description: Maven profile to be selected for the release; typically "community-action-maven-release".
     required: false
