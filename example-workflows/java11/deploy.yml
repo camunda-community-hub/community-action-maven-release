@@ -31,7 +31,7 @@ jobs:
       - name: Deploy SNAPSHOT / Release
         uses: camunda-community-hub/community-action-maven-release@v1.0.12
         with:
-          release-version: ${{ github.event.release.latest }}
+          release-version: ${{ github.event.release.tag_name }}
           release-profile: release
           nexus-usr: ${{ secrets.NEXUS_USR }}
           nexus-psw: ${{ secrets.NEXUS_PSW }}
