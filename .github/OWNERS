@@ -1,0 +1,9 @@
+
+# Code owners
+
+reviewers:
+  - celanthe
+approvers:
+  - celanthe
+labels:
+  - waiting-for-camunda
