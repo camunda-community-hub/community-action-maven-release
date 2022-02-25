@@ -24,7 +24,7 @@ If there are no vulnerabilities found, or `UNKNOWN,` `LOW,` or `MEDIUM` vulnerab
 
 The [v1.0.7 release](https://github.com/camunda-community-hub/community-action-maven-release/releases/tag/v1.0.7) introduces uploading the results of a Trivy vulnerability scan that has completed with `exit 1` contained in a Sarif file to the [GitHub Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) tab.
 
-> ![A BPMN diagram of the release workflow](https://github.com/camunda-community-hub/community/blob/main/assets/release-new-version.png)
+> ![A BPMN diagram of the release workflow](https://github.com/camunda-community-hub/community/blob/main/assets/release-new-version%20(1).png)
 
 ### Usage
 
@@ -96,6 +96,6 @@ This parent POM contains all necessary settings for the GitHub action to functio
 
 ### Troubleshooting
 
-1. If you are facing any issues regarding your extension's release process, please [open an issue](https://github.com/camunda-community-hub/community-action-maven-release/issues) and assign it to [@celanthe](https://github.com/celanthe) with applicable issue labels applied.
+1. If you are facing any issues regarding your extension's release process, please [open an issue](https://github.com/camunda-community-hub/community-action-maven-release/issues) and assign it to [@camunda-community-hub/devrel](https://github.com/orgs/camunda-community-hub/teams/devrel) with applicable issue labels applied.
 2. If you see an update or improvement that can be made to the release process in the Camunda Community Hub, we encourage you to submit an issue with your request, and thank you for your suggestion!
 3. Please make use of the [Camunda Community Hub Pull Request Template](https://github.com/camunda-community-hub/community/issues/new?assignees=&labels=&template=camunda-community-hub-pull-request-template.md&title=Pull+Request) when opening a troubleshooting pull request and include as much information as possible in order to help reviewers better understand the issue you are facing.
