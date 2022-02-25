@@ -1,8 +1,8 @@
 # Code owners
 
 reviewers:
-  - @camunda-community-hub/devrel
+  - camunda-community-hub/devrel
 approvers:
-  - @camunda-community-hub/devrel
+  - camunda-community-hub/devrel
 labels:
   - waiting-for-camunda
