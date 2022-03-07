@@ -24,7 +24,7 @@ If there are no vulnerabilities found, or `UNKNOWN,` `LOW,` or `MEDIUM` vulnerab
 
 The [v1.0.7 release](https://github.com/camunda-community-hub/community-action-maven-release/releases/tag/v1.0.7) introduces uploading the results of a Trivy vulnerability scan that has completed with `exit 1` contained in a Sarif file to the [GitHub Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) tab.
 
-> ![A BPMN diagram of the release workflow](https://github.com/camunda-community-hub/community/blob/main/assets/release-new-version%20(1).png)
+> ![A BPMN diagram of the release workflow](<https://github.com/camunda-community-hub/community/blob/main/assets/release-new-version%20(1).png>)
 
 ### Usage
 
