@@ -59,6 +59,10 @@ inputs:
     description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under s01.oss.sonatype.org
     required: false
     default: "oss.sonatype.org"
+  branch:
+    description: Branch on which the new version numbers will be committed
+    required: false
+    default: ${{ github.event.repository.default_branch }}
 outputs:
   artifacts_archive_path:
     description: Filename of zipfile containing all files matched by artifacts-pattern.
@@ -147,7 +151,7 @@ runs:
         MAVEN_PSW: ${{ inputs.maven-psw }}
         MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
     - name: Prepare next development version
-      run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ github.event.repository.default_branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }}"
+      run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ inputs.branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }}"
       shell: bash
     - name: Archive artifacts
       run: |-
