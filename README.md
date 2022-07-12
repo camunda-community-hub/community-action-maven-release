@@ -25,7 +25,7 @@ This parent POM contains all necessary settings for the GitHub action to functio
 
 Add a Github workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to your) to your project.
 
-Importait configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
+Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
 * **Sonatype Server:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: s01.oss.sonatype.org`
 * **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action.
