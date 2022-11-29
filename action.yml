@@ -141,7 +141,6 @@ runs:
         MAVEN_PSW: ${{ inputs.maven-psw }}
     - name: Publish Maven Release
       run: |-
-        test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
         echo "Set version to ${{ inputs.release-version }}"
         mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
