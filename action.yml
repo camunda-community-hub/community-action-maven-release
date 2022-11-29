@@ -83,7 +83,7 @@ runs:
         test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> $GITHUB_ENV
         cp -v ${{ github.action_path }}/resources/settings.xml $HOME/.m2/
       shell: bash
-    - name: Run Tests
+    - name: Run Maven
       run: |-
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
         mvn -B ${{ inputs.maven-additional-options }} ${{ inputs.maven-build-options }} package ${SKIP_TESTS}
