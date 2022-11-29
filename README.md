@@ -41,7 +41,8 @@ jobs:
   publish:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - name: Checks out code
+        uses: actions/checkout@v3
       - name: Set up Java environment
         uses: actions/setup-java@v3
         with:

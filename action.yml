@@ -145,9 +145,10 @@ runs:
         echo "Set version to ${{ inputs.release-version }}"
         mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
         echo "Deploy release to Camunda Repository using ${{inputs.release-profile}} profile"
-        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} deploy
-        echo "Deply release to Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
-        mvn -B ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests -DnexusUrl=https://${{inputs.maven-url}}/  ${{ inputs.maven-release-options }} deploy
+        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
+        echo "Deploy release to Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
+        mvn -B ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
+         -DskipTests -DnexusUrl=https://${{inputs.maven-url}}/ ${{ inputs.maven-release-options }} deploy
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
