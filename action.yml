@@ -179,7 +179,7 @@ runs:
 
     - name: Publish Unit Test Results
       id: publish
-      uses: EnricoMi/publish-unit-test-result-action@v2.20
+      uses: EnricoMi/publish-unit-test-result-action@v2.2.0
       if: failure()
       with:
         files: target/surefire-reports/*.xml
