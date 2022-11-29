@@ -27,8 +27,8 @@ Add a Github workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to 
 
 Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
-* **Sonatype Server:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: s01.oss.sonatype.org`
-* **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action.
+- **Sonatype Server:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: s01.oss.sonatype.org`
+- **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action.
 
 ```yaml
 name: Deploy artifacts with Maven
@@ -77,9 +77,6 @@ jobs:
           asset_content_type: application/zip
 ```
 
-
-
-
 # More info
 
 ## Security scanning
@@ -92,9 +89,7 @@ The [v1.0.7 release](https://github.com/camunda-community-hub/community-action-m
 
 > ![A BPMN diagram of the release workflow](<https://github.com/camunda-community-hub/community/blob/main/assets/release-new-version%20(1).png>)
 
-
 ## Why this design?
-
 
 GitHub Actions currently has poor options for code sharing. This means that workflows have to be duplicated across repositories. This has the advantage of highly customizable workflows, on the other hand it makes maintaining workflows painful.
 
@@ -110,9 +105,8 @@ In order to effectively maintain a large number of repositories, an implementati
 
 In order to release a new version:
 
-* Create a new release and create a tag on-the-fly (e.g. `v1.0.13`)
-* Delete the existing `latest` and `v1` tags and re-create them, pointing to the the new tag (e.g. `v1.0.13`). This way, the new version will also be used in already existing actions of community extensions.
-
+- Create a new release and create a tag on-the-fly (e.g. `v1.0.13`)
+- Delete the existing `latest` and `v1` tags and re-create them, pointing to the the new tag (e.g. `v1.0.13`). This way, the new version will also be used in already existing actions of community extensions.
 
 # Troubleshooting
 
