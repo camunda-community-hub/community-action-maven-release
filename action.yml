@@ -2,13 +2,17 @@ name: Release Camunda Community Project on Maven Central
 description: Encapsulates the release process of Camunda community extensions
 inputs:
   artifacts-pattern:
-    description: Which artifacts to store. Set to empty string to disable.
+    description: Which artifacts to store. Set to empty string to disable
     required: false
     default: ./target/nexus-staging/**/*.jar
   run-tests:
     default: ""
     required: false
     description: Wether to explicitly run maven tests prior to releasing
+  maven-additional-options:
+    description: Any extra Maven options
+    required: false
+    default: ""
   maven-release-options:
     description: Any extra Maven options for the release process (-DskipTests is already implied)
     required: false
@@ -16,9 +20,15 @@ inputs:
   release-version:
     description: Release Version (usually tag name). If empty, a SNAPSHOT (with the currently configured version) will be deployed.
     required: false
+    default: "latest"
   release-profile:
-    description: Maven profile to be selected for the release; typically "release".
+    description: Maven profile to be selected for the release; typically "community-action-maven-release".
     required: false
+    default: "community-action-maven-release"
+  central-release-profile:
+    description: Maven profile to be selected for the release to Maven Central; typically "oss-maven-central".
+    required: false
+    default: "oss-maven-central"
   nexus-usr:
     description: Camunda Nexus username
     required: true
@@ -41,6 +51,22 @@ inputs:
   github-token:
     description: GitHub token
     required: true
+  maven-build-options:
+    description: Any extra Maven options for the initial build process
+    required: false
+    default: ""
+  vulnerability-scan:
+    description: Vulnerability scanning using Aqua Security Trivy
+    required: false
+    default: "false"
+  maven-url:
+    description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under s01.oss.sonatype.org
+    required: false
+    default: "oss.sonatype.org"
+  branch:
+    description: Branch on which the new version numbers will be committed
+    required: false
+    default: ${{ github.event.repository.default_branch }}
 outputs:
   artifacts_archive_path:
     description: Filename of zipfile containing all files matched by artifacts-pattern.
@@ -54,21 +80,59 @@ runs:
         git config --global user.name "Release Bot"
         git config --global user.email actions@github.com
         test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=-P${{inputs.release-profile}}' >> $GITHUB_ENV
+        test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> $GITHUB_ENV
         cp -v ${{ github.action_path }}/resources/settings.xml $HOME/.m2/
       shell: bash
     - name: Run Tests
       run: |-
-        test -z "${{ inputs.run-tests }}" && echo "::info::Skipping test execution" && exit 0
-        mvn -B verify
+        test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
+        mvn -B ${{ inputs.maven-additional-options }} ${{ inputs.maven-build-options }} package ${SKIP_TESTS}
       shell: bash
+      ###########################################
+      # Download and install Trivy and template #
+      ###########################################
+    - name: Download and Install Trivy
+      shell: bash
+      run: |
+        if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
+        then
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b ${GITHUB_WORKSPACE}
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/sarif.tpl -o sarif.tpl
+          ./trivy --version
+          ./trivy fs -t @sarif.tpl -f template -o trivy-results.sarif .
+
+          if [[ $(cat trivy-results.sarif | grep -E 'Severity: (HIGH|CRITICAL)' | wc -l) > 0 ]];
+          then
+            ./trivy fs .
+            exit 1
+          else
+            exit 0
+          fi
+        fi
+    - name: Upload SARIF file
+      shell: bash
+      run: |
+        if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
+        then
+          COMPRESSED_SARIF=$(gzip -c trivy-results.sarif | base64 -w0)
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "authorization: Bearer ${{ inputs.github-token }}" \
+            https://api.github.com/repos/${GITHUB_REPOSITORY}/code-scanning/sarifs \
+            -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
+        fi
+    - name: Actions tagger
+      uses: "Actions-R-Us/actions-tagger@latest"
+      with:
+        publish_latest_tag: true
     - name: Publish SNAPSHOT
       run: |-
         echo "::group::Publish SNAPSHOT"
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
-        mvn -B -DskipTests ${{ inputs.maven-release-options }} deploy
-        sed -i 's@:camunda-nexus:.*$@:central:https://oss.sonatype.org/content/repositories/snapshots/@g' target/nexus-staging/deferred/.index
-        mvn -B -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
-        echo ::endgroup::
+        mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
+        find . -path '**target/nexus-staging/deferred/.index' -exec sed -i 's@:camunda-nexus:.*$@:central:https://${{inputs.maven-url}}/content/repositories/snapshots/@g' {} +
+        mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
@@ -79,17 +143,12 @@ runs:
       run: |-
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
-        echo "::group::Publish Release"
-        # 1. set version
-        mvn -B versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
-        # 2. perform release
-        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-release-options }} -DskipTests -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
-          -DnexusUrl=https://oss.sonatype.org/ -DserverId=central -Drelease-version=${{ inputs.release-version }} -Dgpg.sign \
-          deploy \
-          source:jar javadoc:jar \
-          org.apache.maven.plugins:maven-gpg-plugin:sign \
-          nexus-staging:deploy
-        echo ::endgroup::
+        echo "Set version to ${{ inputs.release-version }}"
+        mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
+        echo "Deploy release to Camunda Repository using ${{inputs.release-profile}} profile"
+        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} deploy
+        echo "Deply release to Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
+        mvn -B ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests -DnexusUrl=https://${{inputs.maven-url}}/  ${{ inputs.maven-release-options }} deploy
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
@@ -98,10 +157,7 @@ runs:
         MAVEN_PSW: ${{ inputs.maven-psw }}
         MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
     - name: Prepare next development version
-      run: |-
-        echo "::group::Prepare next development version"
-        ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ github.event.repository.default_branch }}" "${{ inputs.release-version }}"
-        echo ::endgroup::
+      run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ inputs.branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }}"
       shell: bash
     - name: Archive artifacts
       run: |-
