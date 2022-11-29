@@ -21,14 +21,14 @@ Any project needs to use the [community-hub-release-parent](https://github.com/c
 
 This parent POM contains all necessary settings for the GitHub action to function properly.
 
-## Add Github workflow
+## Add GitHub workflow
 
-Add a Github workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to your) to your project.
+Add a GitHub workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to your) to your project.
 
 Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
-* **Sonatype Server:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: s01.oss.sonatype.org`
-* **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action.
+- **Sonatype Server:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: s01.oss.sonatype.org`
+- **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action.
 
 ```yaml
 name: Deploy artifacts with Maven
@@ -41,18 +41,14 @@ jobs:
   publish:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+      - name: Checks out code
+        uses: actions/checkout@v3
       - name: Set up Java environment
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
           java-version: 11
+          distribution: zulu
+          cache: maven
           gpg-private-key: ${{ secrets.MAVEN_CENTRAL_GPG_SIGNING_KEY_SEC }}
           gpg-passphrase: MAVEN_CENTRAL_GPG_PASSPHRASE
       - name: Deploy SNAPSHOT / Release
@@ -66,6 +62,7 @@ jobs:
           maven-psw: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_PSW }}
           maven-url: oss.sonatype.org
           maven-gpg-passphrase: ${{ secrets.MAVEN_CENTRAL_GPG_SIGNING_KEY_PASSPHRASE }}
+          maven-auto-release-after-close: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
         id: release
       - if: github.event.release
@@ -80,14 +77,11 @@ jobs:
           asset_content_type: application/zip
 ```
 
-
-
-
 # More info
 
 ## Security scanning
 
-Introdued in the [v1.0.6 release](https://github.com/camunda-community-hub/community-action-maven-release/releases/tag/v1.0.6) introduces optional [Trivy Security Scanning](https://github.com/aquasecurity/trivy), which can be run during the release process contained in this action via a Bash script. When enabled, Trivy scans for security vulnerabilities in container images, file systems, and Git repositories, as well as for configuration issues. To enable the scanner, set the `vulnerability-scan` input default to `true`.
+Introduced in the [v1.0.6 release](https://github.com/camunda-community-hub/community-action-maven-release/releases/tag/v1.0.6) introduces optional [Trivy Security Scanning](https://github.com/aquasecurity/trivy), which can be run during the release process contained in this action via a Bash script. When enabled, Trivy scans for security vulnerabilities in container images, file systems, and Git repositories, as well as for configuration issues. To enable the scanner, set the `vulnerability-scan` input default to `true`.
 
 If there are no vulnerabilities found, or `UNKNOWN,` `LOW,` or `MEDIUM` vulnerabilities, the action will complete with `exit 0`. If there is a `HIGH` or `CRITICAL` vulnerability found, the release deployment will fail with `exit 1`. The results of the scan will then be displayed in a `sarif.tpl` named `trivy-results.sarif`.
 
@@ -95,9 +89,7 @@ The [v1.0.7 release](https://github.com/camunda-community-hub/community-action-m
 
 > ![A BPMN diagram of the release workflow](<https://github.com/camunda-community-hub/community/blob/main/assets/release-new-version%20(1).png>)
 
-
 ## Why this design?
-
 
 GitHub Actions currently has poor options for code sharing. This means that workflows have to be duplicated across repositories. This has the advantage of highly customizable workflows, on the other hand it makes maintaining workflows painful.
 
@@ -113,9 +105,8 @@ In order to effectively maintain a large number of repositories, an implementati
 
 In order to release a new version:
 
-* Create a new release and create a tag on-the-fly (e.g. `v1.0.13`)
-* Delete the existing `latest` and `v1` tags and re-create them, pointing to the the new tag (e.g. `v1.0.13`). This way, the new version will also be used in already existing actions of community extensions.
-
+- Create a new release and create a tag on-the-fly (e.g. `v1.0.13`)
+- Delete the existing `latest` and `v1` tags and re-create them, pointing to the the new tag (e.g. `v1.0.13`). This way, the new version will also be used in already existing actions of community extensions.
 
 # Troubleshooting
 

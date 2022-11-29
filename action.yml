@@ -44,6 +44,10 @@ inputs:
   maven-gpg-passphrase:
     description: GPG passphrase used to unlock the signing key
     required: true
+  maven-auto-release-after-close:
+    description: Flag indicating triggering of automatic release in OSS Maven Central if the repository closure was successful.
+    required: true
+    default: "false"
   github-token:
     description: GitHub token
     required: true
@@ -124,6 +128,7 @@ runs:
         publish_latest_tag: true
     - name: Publish SNAPSHOT
       run: |-
+        echo "::group::Publish SNAPSHOT"
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
         mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
         find . -path '**target/nexus-staging/deferred/.index' -exec sed -i 's@:camunda-nexus:.*$@:central:https://${{inputs.maven-url}}/content/repositories/snapshots/@g' {} +
@@ -141,8 +146,9 @@ runs:
         mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
         echo "Deploy release to Camunda Repository using ${{inputs.release-profile}} profile"
         mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
-        echo "Deply release to Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
-        mvn -B ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests -DnexusUrl=https://${{inputs.maven-url}}/  ${{ inputs.maven-release-options }} deploy
+        echo "Deploy release to Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
+        mvn -B ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
+         -DskipTests -DnexusUrl=https://${{inputs.maven-url}}/ ${{ inputs.maven-release-options }} deploy
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
