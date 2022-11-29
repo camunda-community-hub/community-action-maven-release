@@ -21,9 +21,9 @@ Any project needs to use the [community-hub-release-parent](https://github.com/c
 
 This parent POM contains all necessary settings for the GitHub action to function properly.
 
-## Add Github workflow
+## Add GitHub workflow
 
-Add a Github workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to your) to your project.
+Add a GitHub workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to your) to your project.
 
 Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
@@ -81,7 +81,7 @@ jobs:
 
 ## Security scanning
 
-Introdued in the [v1.0.6 release](https://github.com/camunda-community-hub/community-action-maven-release/releases/tag/v1.0.6) introduces optional [Trivy Security Scanning](https://github.com/aquasecurity/trivy), which can be run during the release process contained in this action via a Bash script. When enabled, Trivy scans for security vulnerabilities in container images, file systems, and Git repositories, as well as for configuration issues. To enable the scanner, set the `vulnerability-scan` input default to `true`.
+Introduced in the [v1.0.6 release](https://github.com/camunda-community-hub/community-action-maven-release/releases/tag/v1.0.6) introduces optional [Trivy Security Scanning](https://github.com/aquasecurity/trivy), which can be run during the release process contained in this action via a Bash script. When enabled, Trivy scans for security vulnerabilities in container images, file systems, and Git repositories, as well as for configuration issues. To enable the scanner, set the `vulnerability-scan` input default to `true`.
 
 If there are no vulnerabilities found, or `UNKNOWN,` `LOW,` or `MEDIUM` vulnerabilities, the action will complete with `exit 0`. If there is a `HIGH` or `CRITICAL` vulnerability found, the release deployment will fail with `exit 1`. The results of the scan will then be displayed in a `sarif.tpl` named `trivy-results.sarif`.
 
