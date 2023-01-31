@@ -197,4 +197,3 @@ runs:
         zip $ZIPFILE $(find . -path ${{ inputs.artifacts-pattern }})
         echo "filename=${ZIPFILE}" >> $GITHUB_ENV
       shell: bash
-
