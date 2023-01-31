@@ -14,7 +14,7 @@ inputs:
     required: false
     default: ""
   maven-release-options:
-    description: Any extra Maven options for the release process (-DskipTests is already implied)
+    description: Any extra Maven options for the release process (-DskipTests is already implied).
     required: false
     default: ""
   release-version:
@@ -22,13 +22,17 @@ inputs:
     required: false
     default: "latest"
   release-profile:
-    description: Maven profile to be selected for the release; typically "community-action-maven-release".
+    description: Maven profile to be selected for the building release artifacts; typically "community-action-maven-release".
     required: false
     default: "community-action-maven-release"
   central-release-profile:
-    description: Maven profile to be selected for the release to Maven Central; typically "oss-maven-central".
+    description: Maven profile to be selected for configuring Maven Central release; typically "oss-maven-central".
     required: false
     default: "oss-maven-central"
+  camunda-release-profile:
+    description: Maven profile to be selected for configuring Camunda Artifactory release; typically "camunda-repository".
+    required: false
+    default: "camunda-repository"
   nexus-usr:
     description: Camunda Nexus username
     required: true
@@ -82,6 +86,7 @@ runs:
         git config --global user.email actions@github.com
         test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=-P${{inputs.release-profile}}' >> $GITHUB_ENV
         test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> $GITHUB_ENV
+        test -n "${{inputs.camunda-release-profile}}" && echo 'CAMUNDA_RELEASE_PROFILE=-P${{inputs.camunda-release-profile}}' >> $GITHUB_ENV
         cp -v ${{ github.action_path }}/resources/settings.xml $HOME/.m2/
       shell: bash
     - name: Run maven
@@ -154,27 +159,41 @@ runs:
       run: |-
         echo "::group::Publish SNAPSHOT"
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
-        mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
-        find . -path '**target/nexus-staging/deferred/.index' -exec sed -i 's@:camunda-nexus:.*$@:central:https://${{inputs.maven-url}}/content/repositories/snapshots/@g' {} +
-        mvn -B ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
+        
+        echo "Publish SNAPSHOT to Camunda Artifactory using profiles ${{inputs.release-profile}}, ${{inputs.camunda-release-profile}}"
+        mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
+          ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
+        
+        echo "Publish SNAPSHOT to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
+        mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
+          ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
         NEXUS_PSW: ${{ inputs.nexus-psw }}
         MAVEN_USR: ${{ inputs.maven-usr }}
         MAVEN_PSW: ${{ inputs.maven-psw }}
+        MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
 
     - name: Publish Maven Release
       id: publish-release
       run: |-
+        echo "::group::Publish RELEASE"
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
+        
         echo "Set version to ${{ inputs.release-version }}"
-        mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules -DnewVersion=${{ inputs.release-version }}
-        echo "Deploy release to Camunda Repository using ${{inputs.release-profile}} profile"
-        mvn -B ${RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} deploy
-        echo "Deploy release to Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
-        mvn -B ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} ${{ inputs.maven-additional-options }} -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
-         -DskipTests -DnexusUrl=https://${{inputs.maven-url}}/ ${{ inputs.maven-release-options }} deploy
+        mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules \
+         -DnewVersion=${{ inputs.release-version }}
+        
+        echo "Deploy release to Camunda Repository using profiles ${{inputs.release-profile}}, ${{inputs.camunda-release-profile}}"
+        mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
+          ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} deploy
+        
+        echo "Deploy release to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
+        mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
+          -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
+          -DnexusUrl=https://${{inputs.maven-url}}/ \
+          ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
