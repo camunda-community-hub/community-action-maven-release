@@ -43,6 +43,7 @@ jobs:
     steps:
       - name: Checks out code
         uses: actions/checkout@v3
+
       - name: Set up Java environment
         uses: actions/setup-java@v3
         with:
@@ -51,11 +52,11 @@ jobs:
           cache: maven
           gpg-private-key: ${{ secrets.MAVEN_CENTRAL_GPG_SIGNING_KEY_SEC }}
           gpg-passphrase: MAVEN_CENTRAL_GPG_PASSPHRASE
+
       - name: Deploy SNAPSHOT / Release
         uses: camunda-community-hub/community-action-maven-release@v1
         with:
           release-version: ${{ github.event.release.tag_name }}
-          release-profile: community-action-maven-release
           nexus-usr: ${{ secrets.NEXUS_USR }}
           nexus-psw: ${{ secrets.NEXUS_PSW }}
           maven-usr: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_USR }}
@@ -65,6 +66,7 @@ jobs:
           maven-auto-release-after-close: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
         id: release
+
       - if: github.event.release
         name: Attach artifacts to GitHub Release (Release only)
         uses: actions/upload-release-asset@v1
@@ -76,6 +78,15 @@ jobs:
           asset_name: ${{ steps.release.outputs.artifacts_archive_path }}
           asset_content_type: application/zip
 ```
+# Additional parameters
+
+Sometimes you need to pass additional properties to your Maven build. In this case, these options might be interesting for you.
+
+| Parameter                | Default | Meaning                                                                   |
+|--------------------------|---------|---------------------------------------------------------------------------|
+| maven-additional-options |         | Any additional arguments passed to all Maven commands (build and release) |  
+| maven-release-options    |         | Any additional arguments passed to release command                        |
+| maven-build-options      |         | Any additional arguments passed to build command                          |
 
 # More info
 
