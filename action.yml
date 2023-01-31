@@ -165,7 +165,9 @@ runs:
           ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} deploy
         
         echo "Publish SNAPSHOT to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
+        echo "Using Repository URL: https://${{ inputs.maven-url }}/" 
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
+          -DnexusUrl=https://${{inputs.maven-url}}/ \
           ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
       shell: bash
       env:
