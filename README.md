@@ -88,6 +88,15 @@ Sometimes you need to pass additional properties to your Maven build. In this ca
 | maven-release-options    |         | Any additional arguments passed to release command                        |
 | maven-build-options      |         | Any additional arguments passed to build command                          |
 
+
+# Auto-closing OSS Maven Central Staging Repository
+
+OSS Maven Central uses a two-phase procedure during release. After uploading the artifacts and running all checks, the repository needs to be explicitly
+closed. This second step is either performed manually, or can be automated by a setting of the action.
+
+Please set the `maven-auto-release-after-close` to `true`, if you want to automatically close the repository and release remotely staged artifacts.
+
+
 # More info
 
 ## Security scanning
