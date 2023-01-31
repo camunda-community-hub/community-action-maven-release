@@ -163,11 +163,11 @@ runs:
         
         echo "Publish SNAPSHOT to Camunda Artifactory using profiles ${{inputs.release-profile}}, ${{inputs.camunda-release-profile}}"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
-          ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
+          ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} deploy
         
         echo "Publish SNAPSHOT to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
-          ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} org.sonatype.plugins:nexus-staging-maven-plugin:deploy-staged
+          ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
       shell: bash
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
