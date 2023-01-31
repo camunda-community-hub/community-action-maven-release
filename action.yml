@@ -87,6 +87,7 @@ runs:
         test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=-P${{inputs.release-profile}}' >> $GITHUB_ENV
         test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> $GITHUB_ENV
         test -n "${{inputs.camunda-release-profile}}" && echo 'CAMUNDA_RELEASE_PROFILE=-P${{inputs.camunda-release-profile}}' >> $GITHUB_ENV
+        mkdir $HOME/.m2/
         cp -v ${{ github.action_path }}/resources/settings.xml $HOME/.m2/
       shell: bash
     - name: Run maven
