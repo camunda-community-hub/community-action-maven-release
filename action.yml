@@ -75,6 +75,7 @@ runs:
   using: composite
   steps:
     - name: Initialize
+      id: initialize
       run: |-
         echo Repo: ${GITHUB_REPOSITORY}
         git config --global user.name "Release Bot"
@@ -84,12 +85,14 @@ runs:
         cp -v ${{ github.action_path }}/resources/settings.xml $HOME/.m2/
       shell: bash
     - name: Run maven
+      id: run-maven
       run: |-
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
         mvn -B ${{ inputs.maven-additional-options }} ${{ inputs.maven-build-options }} package ${SKIP_TESTS}
       shell: bash
 
     - name: Archive Test Results on Failure
+      id: upload-test-results-on-fail
       uses: actions/upload-artifact@v3
       if: ${{ inputs.run-tests && failure() }}
       with:
@@ -98,7 +101,7 @@ runs:
         retention-days: 7
 
     - name: Publish Unit Test Results on Failure
-      id: publish
+      id: publish-test-results-on-fail
       uses: EnricoMi/publish-unit-test-result-action@v2.3.0
       if: ${{ inputs.run-tests && failure() }}
       with:
@@ -108,8 +111,9 @@ runs:
       # Download and install Trivy and template #
       ###########################################
     - name: Download and Install Trivy
+      id: run-trivy
       shell: bash
-      run: |
+      run: |-
         if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
         then
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b ${GITHUB_WORKSPACE}
@@ -126,8 +130,9 @@ runs:
           fi
         fi
     - name: Upload SARIF file
+      id: upload-trivy-report
       shell: bash
-      run: |
+      run: |-
         if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
         then
           COMPRESSED_SARIF=$(gzip -c trivy-results.sarif | base64 -w0)
@@ -139,10 +144,13 @@ runs:
             -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
         fi
     - name: Actions tagger
-      uses: "Actions-R-Us/actions-tagger@latest"
+      id: tag
+      uses: Actions-R-Us/actions-tagger@latest
       with:
         publish_latest_tag: true
+
     - name: Publish SNAPSHOT
+      id: publish-snapshot
       run: |-
         echo "::group::Publish SNAPSHOT"
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
@@ -155,7 +163,9 @@ runs:
         NEXUS_PSW: ${{ inputs.nexus-psw }}
         MAVEN_USR: ${{ inputs.maven-usr }}
         MAVEN_PSW: ${{ inputs.maven-psw }}
+
     - name: Publish Maven Release
+      id: publish-release
       run: |-
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
         echo "Set version to ${{ inputs.release-version }}"
@@ -172,15 +182,19 @@ runs:
         MAVEN_USR: ${{ inputs.maven-usr }}
         MAVEN_PSW: ${{ inputs.maven-psw }}
         MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
+
     - name: Prepare next development version
+      id: prepare-next-dev-version
       run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ inputs.branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }}"
       shell: bash
+
     - name: Archive artifacts
+      id: create-archive
       run: |-
         test -z "${{ inputs.artifacts-pattern }}" && echo "::debug::Skipping archiving because artifacts-pattern is unset" && exit 0
         # Filename: [repo without org]-[version].zip
         ZIPFILE=${GITHUB_REPOSITORY#*/}-${{ inputs.release-version }}.zip
         zip $ZIPFILE $(find . -path ${{ inputs.artifacts-pattern }})
-        echo "::set-output name=filename::${ZIPFILE}"
+        echo "filename=${ZIPFILE}" >> $GITHUB_ENV
       shell: bash
-      id: create-archive
+
