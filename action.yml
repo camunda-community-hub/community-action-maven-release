@@ -216,5 +216,5 @@ runs:
         # Filename: [repo without org]-[version].zip
         ZIPFILE=${GITHUB_REPOSITORY#*/}-${{ inputs.release-version }}.zip
         zip $ZIPFILE $(find . -path ${{ inputs.artifacts-pattern }})
-        echo "filename=${ZIPFILE}" >> $GITHUB_ENV
+        echo "filename=${ZIPFILE}" >> $GITHUB_OUTPUT
       shell: bash
