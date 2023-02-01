@@ -4,7 +4,7 @@
 
 The community-action-maven-release helps you building and deploying Maven projects to the Camunda Artifactory and  Maven Central.
 
-More information can be found in the [release process documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD).
+More information can be found in the [release documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD).
 
 # How-to use
 
