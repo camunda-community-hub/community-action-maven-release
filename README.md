@@ -1,11 +1,15 @@
 [![Lifecycle: Incubating](https://img.shields.io/badge/Lifecycle-Incubating-blue)](https://github.com/Camunda-Community-Hub/community/blob/main/extension-lifecycle.md#incubating-)
 
-# GitHub Action Supporting The Camunda Community Extensions Release Process
+# GitHub Action to build and release Camunda Community Extensions
 
 The community-action-maven-release makes sure a community extension in Java can be released to Maven Central.
 Please [check out the release process documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD) first.
 
 # How-to use
+
+## Onboard your repository
+
+Before doing any release, you will need to register your repository by opening a pull request on https://github.com/camunda-community-hub/infrastructure. Follow the [instructions for onboarding a new repository](https://github.com/camunda-community-hub/infrastructure#use-case-onboarding-a-new-community-hub-repository).
 
 ## Add release parent to POM
 
@@ -15,7 +19,7 @@ Any project needs to use the [community-hub-release-parent](https://github.com/c
 <parent>
     <groupId>org.camunda.community</groupId>
     <artifactId>community-hub-release-parent</artifactId>
-    <version>1.3.1</version>
+    <version>1.4.0</version>
 </parent>
 ```
 
