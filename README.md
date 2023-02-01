@@ -2,8 +2,9 @@
 
 # GitHub Action to build and release Camunda Community Extensions
 
-The community-action-maven-release makes sure a community extension in Java can be released to Maven Central.
-Please [check out the release process documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD) first.
+The community-action-maven-release helps you building and deploying Maven projects to the Camunda Artifactory and  Maven Central.
+
+More information can be found in the [release process documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD).
 
 # How-to use
 
