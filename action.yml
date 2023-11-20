@@ -107,7 +107,7 @@ runs:
 
     - name: Publish Unit Test Results on Failure
       id: publish-test-results-on-fail
-      uses: EnricoMi/publish-unit-test-result-action@v2.3.0
+      uses: EnricoMi/publish-unit-test-result-action@v2.11.0
       if: ${{ inputs.run-tests && failure() }}
       with:
         junit_files: target/surefire-reports/*.xml
