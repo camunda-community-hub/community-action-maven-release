@@ -33,13 +33,14 @@ Add a GitHub workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to 
 Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
 - **Sonatype Server:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: s01.oss.sonatype.org`
-- **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action.
+- **Sonatype Credentials:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven credentials below, as Sonatype now requires different credentials as before: `maven-usr: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_USR }}` and `maven-psw: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_USR }}`
+- **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action: `branch: ${{ github.event.release.target_commitish || github.ref_name }}`
 
 ```yaml
 name: Deploy artifacts with Maven
 on:
   push:
-    branches: [master]
+    branches: [main]
   release:
     types: [published]
 jobs:
@@ -47,13 +48,13 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checks out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Java environment
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          java-version: 11
-          distribution: zulu
+          java-version: 21
+          distribution: temurin
           cache: maven
           gpg-private-key: ${{ secrets.MAVEN_CENTRAL_GPG_SIGNING_KEY_SEC }}
           gpg-passphrase: MAVEN_CENTRAL_GPG_PASSPHRASE
@@ -64,8 +65,8 @@ jobs:
           release-version: ${{ github.event.release.tag_name }}
           nexus-usr: ${{ secrets.NEXUS_USR }}
           nexus-psw: ${{ secrets.NEXUS_PSW }}
-          maven-usr: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_USR }}
-          maven-psw: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_PSW }}
+          maven-usr: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_USR_C7 }}
+          maven-psw: ${{ secrets.MAVEN_CENTRAL_DEPLOYMENT_PSW_C7 }}
           maven-url: oss.sonatype.org
           maven-gpg-passphrase: ${{ secrets.MAVEN_CENTRAL_GPG_SIGNING_KEY_PASSPHRASE }}
           maven-auto-release-after-close: true
@@ -83,6 +84,7 @@ jobs:
           asset_name: ${{ steps.release.outputs.artifacts_archive_path }}
           asset_content_type: application/zip
 ```
+
 # Additional parameters
 
 Sometimes you need to pass additional properties to your Maven build. In this case, these options might be interesting for you.
