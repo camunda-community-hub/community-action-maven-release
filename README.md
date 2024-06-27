@@ -2,7 +2,7 @@
 
 # GitHub Action to build and release Camunda Community Extensions
 
-The community-action-maven-release helps you building and deploying Maven projects to the Camunda Artifactory and  Maven Central.
+The community-action-maven-release helps you building and deploying Maven projects to the Camunda Artifactory and Maven Central.
 
 More information can be found in the [release documentation](https://github.com/camunda-community-hub/community/blob/main/RELEASE.MD).
 
@@ -90,7 +90,7 @@ jobs:
 Sometimes you need to pass additional properties to your Maven build. In this case, these options might be interesting for you.
 
 | Parameter                | Default | Meaning                                                                   |
-|--------------------------|---------|---------------------------------------------------------------------------|
+| ------------------------ | ------- | ------------------------------------------------------------------------- |
 | maven-additional-options |         | Any additional arguments passed to all Maven commands (build and release) |  
 | maven-release-options    |         | Any additional arguments passed to release command                        |
 | maven-build-options      |         | Any additional arguments passed to build command                          |
