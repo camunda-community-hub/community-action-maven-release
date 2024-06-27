@@ -62,7 +62,7 @@ inputs:
   vulnerability-scan:
     description: Vulnerability scanning using Aqua Security Trivy
     required: false
-    default: false
+    default: "false"
   maven-url:
     description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under s01.oss.sonatype.org
     required: false
