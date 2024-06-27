@@ -51,7 +51,7 @@ inputs:
   maven-auto-release-after-close:
     description: Flag indicating triggering of automatic release in OSS Maven Central if the repository closure was successful.
     required: true
-    default: false
+    default: "false"
   github-token:
     description: GitHub token
     required: true
@@ -62,7 +62,7 @@ inputs:
   vulnerability-scan:
     description: Vulnerability scanning using Aqua Security Trivy
     required: false
-    default: false
+    default: "false"
   maven-url:
     description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under s01.oss.sonatype.org
     required: false
@@ -159,13 +159,13 @@ runs:
       run: |-
         echo "::group::Publish SNAPSHOT"
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
-        
+
         echo "Publish SNAPSHOT to Camunda Artifactory using profiles ${{inputs.release-profile}}, ${{inputs.camunda-release-profile}}"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} deploy
-        
+
         echo "Publish SNAPSHOT to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
-        echo "Using Repository URL: https://${{ inputs.maven-url }}/" 
+        echo "Using Repository URL: https://${{ inputs.maven-url }}/"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           -DnexusUrl=https://${{inputs.maven-url}}/ \
           ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
@@ -182,15 +182,15 @@ runs:
       run: |-
         echo "::group::Publish RELEASE"
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
-        
+
         echo "Set version to ${{ inputs.release-version }}"
         mvn -B ${{ inputs.maven-additional-options }} versions:set org.codehaus.mojo:versions-maven-plugin:2.8.1:update-child-modules \
          -DnewVersion=${{ inputs.release-version }}
-        
+
         echo "Deploy release to Camunda Repository using profiles ${{inputs.release-profile}}, ${{inputs.camunda-release-profile}}"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} deploy
-        
+
         echo "Deploy release to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
