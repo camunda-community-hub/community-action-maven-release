@@ -51,7 +51,7 @@ inputs:
   maven-auto-release-after-close:
     description: Flag indicating triggering of automatic release in OSS Maven Central if the repository closure was successful.
     required: true
-    default: false
+    default: 'false'
   github-token:
     description: GitHub token
     required: true
