@@ -91,7 +91,7 @@ Sometimes you need to pass additional properties to your Maven build. In this ca
 
 | Parameter                | Default | Meaning                                                                   |
 | ------------------------ | ------- | ------------------------------------------------------------------------- |
-| maven-additional-options |         | Any additional arguments passed to all Maven commands (build and release) |  
+| maven-additional-options |         | Any additional arguments passed to all Maven commands (build and release) |
 | maven-release-options    |         | Any additional arguments passed to release command                        |
 | maven-build-options      |         | Any additional arguments passed to build command                          |
 
