@@ -20,7 +20,7 @@ Any project needs to use the [community-hub-release-parent](https://github.com/c
 <parent>
     <groupId>org.camunda.community</groupId>
     <artifactId>community-hub-release-parent</artifactId>
-    <version>1.4.1</version>
+    <version>1.4.4</version>
 </parent>
 ```
 
@@ -60,7 +60,7 @@ jobs:
           gpg-passphrase: MAVEN_CENTRAL_GPG_PASSPHRASE
 
       - name: Deploy SNAPSHOT / Release
-        uses: camunda-community-hub/community-action-maven-release@v1
+        uses: camunda-community-hub/community-action-maven-release@v1.2.1
         with:
           release-version: ${{ github.event.release.tag_name }}
           nexus-usr: ${{ secrets.NEXUS_USR }}
