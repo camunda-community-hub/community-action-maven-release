@@ -32,8 +32,22 @@ Add a GitHub workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to 
 
 Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
-- **Sonatype Server:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven url below, as Sonatype uses different servers for newer groups: `maven-url: s01.oss.sonatype.org`
-- **Sonatype Credentials:** If you want to deploy artifacts with the group id `io.camunda` you need to adjust the maven credentials below, as Sonatype now requires different credentials as before: `maven-usr: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_S01_USR }}` and `maven-psw: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_S01_PSW }}`
+- **Sonatype Server & Credentials:** 
+
+If you're using the org.camunda.community groupID, you need to use the OSS URL, username and password:
+
+          maven-usr: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_OSS_USR }}
+          maven-psw: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_OSS_PSW }}
+          maven-url: oss.sonatype.org
+
+If you're using the io.camunda groupID, use the s01 credentials:
+
+          maven-usr: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_S01_USR  }}
+          maven-psw: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_S01_PSW }}
+          maven-url: s01.oss.sonatype.org
+
+> [!TIP]
+> Hint: Most Community Hub projects are in the `org.camunda.community` groupID.
 - **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action: `branch: ${{ github.event.release.target_commitish || github.ref_name }}`
 
 ```yaml
