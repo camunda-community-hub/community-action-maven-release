@@ -48,6 +48,7 @@ If you're using the io.camunda groupID, use the s01 credentials:
 
 > [!TIP]
 > Hint: Most Community Hub projects are in the `org.camunda.community` groupID.
+
 - **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action: `branch: ${{ github.event.release.target_commitish || github.ref_name }}`
 
 ```yaml
