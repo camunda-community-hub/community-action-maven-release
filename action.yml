@@ -98,7 +98,7 @@ runs:
 
     - name: Archive Test Results on Failure
       id: upload-test-results-on-fail
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ inputs.run-tests && failure() }}
       with:
         name: test-results
