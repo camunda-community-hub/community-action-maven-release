@@ -32,7 +32,7 @@ Add a GitHub workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to 
 
 Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
-- **Sonatype Server & Credentials:** 
+- **Sonatype Server & Credentials:**
 
 If you're using the org.camunda.community groupID, you need to use the OSS URL, username and password:
 
