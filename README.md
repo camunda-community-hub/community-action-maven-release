@@ -32,7 +32,7 @@ Add a GitHub workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to 
 
 Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
-- **Sonatype Server & Credentials:** 
+- **Sonatype Server & Credentials:**
 
 If you're using the org.camunda.community groupID, you need to use the OSS URL, username and password:
 
@@ -48,6 +48,7 @@ If you're using the io.camunda groupID, use the s01 credentials:
 
 > [!TIP]
 > Hint: Most Community Hub projects are in the `org.camunda.community` groupID.
+
 - **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action: `branch: ${{ github.event.release.target_commitish || github.ref_name }}`
 
 ```yaml
