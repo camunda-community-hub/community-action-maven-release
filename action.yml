@@ -1,5 +1,7 @@
+---
 name: Release Camunda Community Project on Maven Central
 description: Encapsulates the release process of Camunda community extensions
+
 inputs:
   artifacts-pattern:
     description: Which artifacts to store. Set to empty string to disable
@@ -71,23 +73,25 @@ inputs:
     description: Branch on which the new version numbers will be committed
     required: false
     default: ${{ github.event.repository.default_branch }}
+
 outputs:
   artifacts_archive_path:
     description: Filename of zipfile containing all files matched by artifacts-pattern.
     value: ${{ steps.create-archive.outputs.filename }}
+
 runs:
   using: composite
   steps:
     - name: Initialize
       id: initialize
       run: |-
-        echo Repo: ${GITHUB_REPOSITORY}
+        echo "Repo: ${GITHUB_REPOSITORY}"
         git config --global user.name "Release Bot"
-        git config --global user.email actions@github.com
-        test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=-P${{inputs.release-profile}}' >> $GITHUB_ENV
-        test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> $GITHUB_ENV
-        test -n "${{inputs.camunda-release-profile}}" && echo 'CAMUNDA_RELEASE_PROFILE=-P${{inputs.camunda-release-profile}}' >> $GITHUB_ENV
-        cp -v ${{ github.action_path }}/resources/settings.xml $HOME/.m2/
+        git config --global user.email "actions@github.com"
+        test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=-P${{inputs.release-profile}}' >> "$GITHUB_ENV"
+        test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> "$GITHUB_ENV"
+        test -n "${{inputs.camunda-release-profile}}" && echo 'CAMUNDA_RELEASE_PROFILE=-P${{inputs.camunda-release-profile}}' >> "$GITHUB_ENV"
+        cp -v "${{ github.action_path }}/resources/settings.xml" "$HOME/.m2/"
       shell: bash
     - name: Run maven
       id: run-maven
@@ -121,13 +125,12 @@ runs:
       run: |-
         if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
         then
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b ${GITHUB_WORKSPACE}
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b "${GITHUB_WORKSPACE}"
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/sarif.tpl -o sarif.tpl
           ./trivy --version
           ./trivy fs -t @sarif.tpl -f template -o trivy-results.sarif .
 
-          if [[ $(cat trivy-results.sarif | grep -E 'Severity: (HIGH|CRITICAL)' | wc -l) > 0 ]];
-          then
+          if [[ $(cat trivy-results.sarif | grep -E 'Severity: (HIGH|CRITICAL)' | wc -l) -gt 0 ]]; then
             ./trivy fs .
             exit 1
           else
@@ -145,7 +148,7 @@ runs:
             -X POST \
             -H "Accept: application/vnd.github.v3+json" \
             -H "authorization: Bearer ${{ inputs.github-token }}" \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/code-scanning/sarifs \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/code-scanning/sarifs" \
             -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
         fi
     - name: Actions tagger
@@ -167,7 +170,7 @@ runs:
         echo "Publish SNAPSHOT to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
         echo "Using Repository URL: https://${{ inputs.maven-url }}/"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
-          -DnexusUrl=https://${{inputs.maven-url}}/ \
+          -DnexusUrl="https://${{inputs.maven-url}}/" \
           ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
       shell: bash
       env:
@@ -194,7 +197,7 @@ runs:
         echo "Deploy release to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
-          -DnexusUrl=https://${{inputs.maven-url}}/ \
+          -DnexusUrl="https://${{inputs.maven-url}}/" \
           ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
       shell: bash
       env:
@@ -214,7 +217,8 @@ runs:
       run: |-
         test -z "${{ inputs.artifacts-pattern }}" && echo "::debug::Skipping archiving because artifacts-pattern is unset" && exit 0
         # Filename: [repo without org]-[version].zip
-        ZIPFILE=${GITHUB_REPOSITORY#*/}-${{ inputs.release-version }}.zip
-        zip $ZIPFILE $(find . -path ${{ inputs.artifacts-pattern }})
-        echo "filename=${ZIPFILE}" >> $GITHUB_OUTPUT
+        ZIPFILE="${GITHUB_REPOSITORY#*/}-${{ inputs.release-version }}.zip"
+        # shellcheck disable=SC2046
+        zip "$ZIPFILE" $(find . -path ${{ inputs.artifacts-pattern }})
+        echo "filename=${ZIPFILE}" >> "$GITHUB_OUTPUT"
       shell: bash
