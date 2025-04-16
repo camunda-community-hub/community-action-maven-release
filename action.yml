@@ -83,7 +83,7 @@ runs:
   using: composite
   steps:
     - name: Initialize
-      id: initialize
+      shell: bash
       run: |-
         echo "Repo: ${GITHUB_REPOSITORY}"
         git config --global user.name "Release Bot"
@@ -92,27 +92,24 @@ runs:
         test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> "$GITHUB_ENV"
         test -n "${{inputs.camunda-release-profile}}" && echo 'CAMUNDA_RELEASE_PROFILE=-P${{inputs.camunda-release-profile}}' >> "$GITHUB_ENV"
         cp -v "${{ github.action_path }}/resources/settings.xml" "$HOME/.m2/"
-      shell: bash
+
     - name: Run maven
-      id: run-maven
+      shell: bash
       run: |-
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
         mvn -B ${{ inputs.maven-additional-options }} ${{ inputs.maven-build-options }} package ${SKIP_TESTS}
-      shell: bash
 
     - name: Archive Test Results on Failure
-      id: upload-test-results-on-fail
-      uses: actions/upload-artifact@v4
       if: ${{ inputs.run-tests && failure() }}
+      uses: actions/upload-artifact@v4
       with:
         name: test-results
         path: target/surefire-reports/
         retention-days: 7
 
     - name: Publish Unit Test Results on Failure
-      id: publish-test-results-on-fail
-      uses: EnricoMi/publish-unit-test-result-action@v2.3.0
       if: ${{ inputs.run-tests && failure() }}
+      uses: EnricoMi/publish-unit-test-result-action@v2.3.0
       with:
         junit_files: target/surefire-reports/*.xml
 
@@ -120,7 +117,6 @@ runs:
       # Download and install Trivy and template #
       ###########################################
     - name: Download and Install Trivy
-      id: run-trivy
       shell: bash
       run: |-
         if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
@@ -138,7 +134,6 @@ runs:
           fi
         fi
     - name: Upload SARIF file
-      id: upload-trivy-report
       shell: bash
       run: |-
         if [[ "${{ inputs.vulnerability-scan }}" == "true" ]];
@@ -152,13 +147,18 @@ runs:
             -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
         fi
     - name: Actions tagger
-      id: tag
       uses: Actions-R-Us/actions-tagger@latest
       with:
         publish_latest_tag: true
 
     - name: Publish SNAPSHOT
-      id: publish-snapshot
+      env:
+        NEXUS_USR: ${{ inputs.nexus-usr}}
+        NEXUS_PSW: ${{ inputs.nexus-psw }}
+        MAVEN_USR: ${{ inputs.maven-usr }}
+        MAVEN_PSW: ${{ inputs.maven-psw }}
+        MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
+      shell: bash
       run: |-
         echo "::group::Publish SNAPSHOT"
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
@@ -172,16 +172,15 @@ runs:
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           -DnexusUrl="https://${{inputs.maven-url}}/" \
           ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
-      shell: bash
+
+    - name: Publish Maven Release
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
         NEXUS_PSW: ${{ inputs.nexus-psw }}
         MAVEN_USR: ${{ inputs.maven-usr }}
         MAVEN_PSW: ${{ inputs.maven-psw }}
         MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
-
-    - name: Publish Maven Release
-      id: publish-release
+      shell: bash
       run: |-
         echo "::group::Publish RELEASE"
         test -z "${{ inputs.release-version }}" && echo "::debug::Skipping Release because release-version is unset" && exit 0
@@ -199,21 +198,14 @@ runs:
           -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
           -DnexusUrl="https://${{inputs.maven-url}}/" \
           ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
-      shell: bash
-      env:
-        NEXUS_USR: ${{ inputs.nexus-usr}}
-        NEXUS_PSW: ${{ inputs.nexus-psw }}
-        MAVEN_USR: ${{ inputs.maven-usr }}
-        MAVEN_PSW: ${{ inputs.maven-psw }}
-        MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
 
     - name: Prepare next development version
-      id: prepare-next-dev-version
-      run: ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ inputs.branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }}"
       shell: bash
+      run: |-
+        ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ inputs.branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }}"
 
     - name: Archive artifacts
-      id: create-archive
+      shell: bash
       run: |-
         test -z "${{ inputs.artifacts-pattern }}" && echo "::debug::Skipping archiving because artifacts-pattern is unset" && exit 0
         # Filename: [repo without org]-[version].zip
@@ -221,4 +213,3 @@ runs:
         # shellcheck disable=SC2046
         zip "$ZIPFILE" $(find . -path ${{ inputs.artifacts-pattern }})
         echo "filename=${ZIPFILE}" >> "$GITHUB_OUTPUT"
-      shell: bash
