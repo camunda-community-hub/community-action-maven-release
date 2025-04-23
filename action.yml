@@ -93,6 +93,19 @@ runs:
         test -n "${{inputs.camunda-release-profile}}" && echo 'CAMUNDA_RELEASE_PROFILE=-P${{inputs.camunda-release-profile}}' >> "$GITHUB_ENV"
         cp -v "${{ github.action_path }}/resources/settings.xml" "$HOME/.m2/"
 
+    - name: Check for legacy parent POM
+      shell: bash
+      run: |-
+        PARENT_ARTIFACTID_OR_ERROR_MSG=$(mvn help:evaluate -Dexpression=project.parent.artifactId -q -DforceStdout | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g")
+        PARENT_VERSION_OR_ERROR_MSG=$(mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout)
+
+        if [[ $PARENT_ARTIFACTID_OR_ERROR_MSG == "community-hub-release-parent" ]] && [[ $PARENT_VERSION_OR_ERROR_MSG == 1.* ]]; then
+          echo "::warning::Legacy version 1.x of community-hub-release-parent POM found." \
+            "Please upgrade ASAP to version 2.x of community-hub-release-parent and" \
+            "community-action-maven-release GHA to be able to upload to Maven Central!" \
+            "See TODO for more details on this migration."
+        fi
+
     - name: Run maven
       shell: bash
       run: |-
