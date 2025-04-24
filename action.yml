@@ -103,7 +103,7 @@ runs:
           echo "::warning::Legacy version 1.x of community-hub-release-parent POM found." \
             "Please upgrade ASAP to version 2.x of community-hub-release-parent and" \
             "community-action-maven-release GHA to be able to upload to Maven Central!" \
-            "See TODO for more details on this migration."
+            "See https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#faq for more details on this migration."
         fi
 
     - name: Run maven
