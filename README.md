@@ -52,15 +52,20 @@ If you're using the io.camunda groupID, use the s01 credentials:
 - **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action: `branch: ${{ github.event.release.target_commitish || github.ref_name }}`
 
 ```yaml
+---
 name: Deploy artifacts with Maven
+
 on:
   push:
     branches: [main]
   release:
     types: [published]
+
 jobs:
   publish:
     runs-on: ubuntu-20.04
+    permissions:
+      contents: write # needed to push Git tags
     steps:
       - name: Checks out code
         uses: actions/checkout@v4
