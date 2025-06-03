@@ -82,6 +82,32 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Check release profile for Maven Central
+      id: maven-central
+      shell: bash
+      env:
+        CENTRAL_RELEASE_PROFILE: ${{ inputs.central-release-profile }}
+        DEPRECATED_RELEASE_PROFILE_IN_V1: oss-maven-central
+        NEW_RELEASE_PROFILE_SINCE_V2: central-sonatype-publish
+      run: |-
+        # Retrieve all available Maven profiles from the current project
+        profiles=$(mvn help:all-profiles)
+
+        # Warn if the new profile is missing, user might be on an outdated parent POM
+        if ! echo "$profiles" | grep -q "$NEW_RELEASE_PROFILE_SINCE_V2"; then
+          echo "::warning::The Maven profile '$NEW_RELEASE_PROFILE_SINCE_V2' is not available. " \
+            "This suggests you are using an outdated parent POM."
+          echo "This new profile is required to support publishing via Sonatype's Central Portal " \
+            "(the new publishing interface for Maven Central)."
+          echo "Please upgrade your parent POM to the latest major version that includes this profile and refer to the documentation for migration guidance: " \
+            "https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to"
+        # Warn if the deprecated profile is still being used for publishing to Maven Central
+        elif [[ "$CENTRAL_RELEASE_PROFILE" == "$DEPRECATED_RELEASE_PROFILE_IN_V1" ]]; then
+          echo "::warning::You are using the deprecated release profile '$CENTRAL_RELEASE_PROFILE'. " \
+            "Due to migration to Sonatype's Central Portal, please switch to the new profile '$NEW_RELEASE_PROFILE_SINCE_V2' and to @v2 of this action. " \
+            "Refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to"
+        fi
+
     - name: Initialize
       shell: bash
       run: |-
