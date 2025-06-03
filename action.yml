@@ -231,6 +231,7 @@ runs:
         ${{ github.action_path }}/resources/prepare-next-development-version.sh "${{ inputs.branch }}" "${{ inputs.release-version }}" "${{ inputs.maven-additional-options }}"
 
     - name: Archive artifacts
+      id: create-archive
       shell: bash
       run: |-
         test -z "${{ inputs.artifacts-pattern }}" && echo "::debug::Skipping archiving because artifacts-pattern is unset" && exit 0
