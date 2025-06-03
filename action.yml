@@ -153,8 +153,8 @@ runs:
         # The fallback will be removed namespace by namespace as migration completes
         group_id=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
         if [[ "$CENTRAL_RELEASE_PROFILE" == "$NEW_RELEASE_PROFILE_SINCE_V2" ]]; then
-          # Check if the groupId starts with io.zeebe, or io.camunda, or org.camunda
-          if [[ "$group_id" == io.zeebe* || "$group_id" == io.camunda* || "$group_id" == org.camunda* ]]; then
+          # Check if the groupId starts with io.camunda or org.camunda
+          if [[ "$group_id" == io.camunda* || "$group_id" == org.camunda* ]]; then
             CENTRAL_RELEASE_PROFILE=$DEPRECATED_RELEASE_PROFILE_IN_V1
             SONATYPE_CENTRAL_PORTAL_USR=$MAVEN_USR
             SONATYPE_CENTRAL_PORTAL_PSW=$MAVEN_PSW
