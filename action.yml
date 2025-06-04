@@ -28,9 +28,25 @@ inputs:
     required: false
     default: "community-action-maven-release"
   central-release-profile:
-    description: Maven profile to be selected for configuring Maven Central release; typically "oss-maven-central".
+    description: |
+      Maven profile to configure the Maven Central release; typically set to "central-sonatype-publish".
+
+      The default (since @v2) is "central-sonatype-publish", the new profile required for Sonatype's Central Portal.
+
+      If a module’s namespace isn’t migrated yet to Sonatype's Central Portal and the "central-sonatype-publish" profile is set,
+      the action (in @v2) will temporarily fall back to the deprecated "oss-maven-central" profile to keep publishing working.
+
+      This fallback is a temporary measure to smooth migration by letting users switch to the new profile immediately,
+      without needing to track migration timelines.
+
+      We strongly recommend switching to @v2 of this action (and the new default profile) right away to benefit from transparent patch releases
+      that will update this fallback behavior and remove it namespace by namespace as migration completes.
+
+      Note: The "central-sonatype-publish" profile is available in the latest version of the parent POM used.
+
+      Please refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to
     required: false
-    default: "oss-maven-central"
+    default: "central-sonatype-publish"
   camunda-release-profile:
     description: Maven profile to be selected for configuring Camunda Artifactory release; typically "camunda-repository".
     required: false
@@ -41,17 +57,33 @@ inputs:
   nexus-psw:
     description: Camunda Nexus password
     required: true
+  sonatype-central-portal-usr:
+    description: Sonatype Central Portal username
+    required: true
+  sonatype-central-portal-psw:
+    description: Sonatype Central Portal password (User Token)
+    required: true
   maven-usr:
     description: Maven Central username
-    required: true
+    deprecationMessage: |
+      This parameter is deprecated since @v2 and will be removed in @v3 due to migration to the new Sonatype's Central Portal.
+      It is ignored if the new `central-sonatype-publish` profile is used.
+
+      Please refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to
+    required: false
   maven-psw:
     description: Maven Central password
-    required: true
+    deprecationMessage: |
+      This parameter is deprecated since @v2 and will be removed in @v3 due to migration to the new Sonatype's Central Portal.
+      It is ignored if the new `central-sonatype-publish` profile is used.
+
+      Please refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to
+    required: false
   maven-gpg-passphrase:
     description: GPG passphrase used to unlock the signing key
     required: true
   maven-auto-release-after-close:
-    description: Flag indicating triggering of automatic release in OSS Maven Central if the repository closure was successful.
+    description: Flag indicating triggering of automatic release in Maven Central if the repository closure was successful.
     required: true
     default: "false"
   github-token:
@@ -67,7 +99,11 @@ inputs:
     default: "false"
   maven-url:
     description: URL of Maven Central/Sonatype, e.g. newer domains are hosted under s01.oss.sonatype.org
-    required: false
+    deprecationMessage: |
+      This parameter is deprecated since @v2 and will be removed in @v3 due to migration to the new Sonatype's Central Portal.
+      It is ignored if the new `central-sonatype-publish` profile is used.
+
+      Please refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to
     default: "oss.sonatype.org"
   branch:
     description: Branch on which the new version numbers will be committed
@@ -89,6 +125,10 @@ runs:
         CENTRAL_RELEASE_PROFILE: ${{ inputs.central-release-profile }}
         DEPRECATED_RELEASE_PROFILE_IN_V1: oss-maven-central
         NEW_RELEASE_PROFILE_SINCE_V2: central-sonatype-publish
+        MAVEN_USR: ${{ inputs.maven-usr }}
+        MAVEN_PSW: ${{ inputs.maven-psw }}
+        SONATYPE_CENTRAL_PORTAL_USR: ${{ inputs.sonatype-central-portal-usr }}
+        SONATYPE_CENTRAL_PORTAL_PSW: ${{ inputs.sonatype-central-portal-psw }}
       run: |-
         # Retrieve all available Maven profiles from the current project
         profiles=$(mvn help:all-profiles)
@@ -108,6 +148,24 @@ runs:
             "Refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to"
         fi
 
+        # Fallback to the deprecated profile if namespace is not migrated yet
+        # This is a temporary measure to smooth migration by letting users switch to the @v2 version of the action and new profile immediately
+        # The fallback will be removed namespace by namespace as migration completes
+        group_id=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+        if [[ "$CENTRAL_RELEASE_PROFILE" == "$NEW_RELEASE_PROFILE_SINCE_V2" ]]; then
+          # Check if the groupId starts with io.zeebe, or io.camunda, or org.camunda
+          if [[ "$group_id" == io.zeebe* || "$group_id" == io.camunda* || "$group_id" == org.camunda* ]]; then
+            CENTRAL_RELEASE_PROFILE=$DEPRECATED_RELEASE_PROFILE_IN_V1
+            SONATYPE_CENTRAL_PORTAL_USR=$MAVEN_USR
+            SONATYPE_CENTRAL_PORTAL_PSW=$MAVEN_PSW
+          fi
+        fi
+        {
+          echo release-profile="${CENTRAL_RELEASE_PROFILE}"
+          echo user="${SONATYPE_CENTRAL_PORTAL_USR}"
+          echo password="${SONATYPE_CENTRAL_PORTAL_PSW}"
+        } >> $GITHUB_OUTPUT
+
     - name: Initialize
       shell: bash
       run: |-
@@ -115,7 +173,7 @@ runs:
         git config --global user.name "Release Bot"
         git config --global user.email "actions@github.com"
         test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=-P${{inputs.release-profile}}' >> "$GITHUB_ENV"
-        test -n "${{inputs.central-release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{inputs.central-release-profile}}' >> "$GITHUB_ENV"
+        test -n "${{steps.maven-central.outputs.release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{steps.maven-central.outputs.release-profile}}' >> "$GITHUB_ENV"
         test -n "${{inputs.camunda-release-profile}}" && echo 'CAMUNDA_RELEASE_PROFILE=-P${{inputs.camunda-release-profile}}' >> "$GITHUB_ENV"
         cp -v "${{ github.action_path }}/resources/settings.xml" "$HOME/.m2/"
 
@@ -181,8 +239,8 @@ runs:
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
         NEXUS_PSW: ${{ inputs.nexus-psw }}
-        MAVEN_USR: ${{ inputs.maven-usr }}
-        MAVEN_PSW: ${{ inputs.maven-psw }}
+        MAVEN_USR: ${{ steps.maven-central.outputs.user }}
+        MAVEN_PSW: ${{ steps.maven-central.outputs.password }}
         MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
       shell: bash
       run: |-
@@ -193,8 +251,9 @@ runs:
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} deploy
 
-        echo "Publish SNAPSHOT to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
-        echo "Using Repository URL: https://${{ inputs.maven-url }}/"
+        # nexusUrl is ignored if the new `central-sonatype-publish` profile is used
+        # to be removed in @v3
+        echo "Publish SNAPSHOT to Maven Central using profiles ${{inputs.release-profile}}, ${{steps.maven-central.outputs.release-profile}}"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           -DnexusUrl="https://${{inputs.maven-url}}/" \
           ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
@@ -203,8 +262,8 @@ runs:
       env:
         NEXUS_USR: ${{ inputs.nexus-usr}}
         NEXUS_PSW: ${{ inputs.nexus-psw }}
-        MAVEN_USR: ${{ inputs.maven-usr }}
-        MAVEN_PSW: ${{ inputs.maven-psw }}
+        MAVEN_USR: ${{ steps.maven-central.outputs.user }}
+        MAVEN_PSW: ${{ steps.maven-central.outputs.password }}
         MAVEN_GPG_PASSPHRASE: ${{ inputs.maven-gpg-passphrase }}
       shell: bash
       run: |-
@@ -219,7 +278,9 @@ runs:
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} deploy
 
-        echo "Deploy release to OSS Nexus / Maven Central using profiles ${{inputs.release-profile}}, ${{inputs.central-release-profile}}"
+        # nexusUrl is ignored if the new `central-sonatype-publish` profile is used
+        # to be removed in @v3
+        echo "Deploy release to Maven Central using profiles ${{inputs.release-profile}}, ${{steps.maven-central.outputs.release-profile}}"
         mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
           -DnexusUrl="https://${{inputs.maven-url}}/" \

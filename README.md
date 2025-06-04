@@ -20,7 +20,7 @@ Any project needs to use the [community-hub-release-parent](https://github.com/c
 <parent>
     <groupId>org.camunda.community</groupId>
     <artifactId>community-hub-release-parent</artifactId>
-    <version>1.4.4</version>
+    <version><!-- Use the newest version available! --></version>
 </parent>
 ```
 
@@ -28,23 +28,16 @@ This parent POM contains all necessary settings for the GitHub action to functio
 
 ## Add GitHub workflow
 
-Add a GitHub workflow (e.g. by adding a file `.github/workflows/deploy.yaml` to your) to your project.
+Add a GitHub workflow (e.g. by adding a file `.github/workflows/deploy.yaml`) to your project.
 
 Important configuration options (see https://github.com/camunda-community-hub/community-action-maven-release/blob/main/action.yml#L3 for all options):
 
 - **Sonatype Server & Credentials:**
 
-If you're using the org.camunda.community groupID, you need to use the OSS URL, username and password:
+You need to provide the following username and password (same for all groupId):
 
-          maven-usr: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_OSS_USR }}
-          maven-psw: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_OSS_PSW }}
-          maven-url: oss.sonatype.org
-
-If you're using the io.camunda groupID, use the s01 credentials:
-
-          maven-usr: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_S01_USR  }}
-          maven-psw: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_S01_PSW }}
-          maven-url: s01.oss.sonatype.org
+          sonatype-central-portal-usr: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_CP_USR }}
+          sonatype-central-portal-psw: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_CP_PSW }}
 
 > [!TIP]
 > Hint: Most Community Hub projects are in the `org.camunda.community` groupID.
@@ -52,15 +45,20 @@ If you're using the io.camunda groupID, use the s01 credentials:
 - **Branch:** If you want to support multiple versions and have different branches for managing those, you can configure them in the action: `branch: ${{ github.event.release.target_commitish || github.ref_name }}`
 
 ```yaml
+---
 name: Deploy artifacts with Maven
+
 on:
   push:
     branches: [main]
   release:
     types: [published]
+
 jobs:
   publish:
     runs-on: ubuntu-20.04
+    permissions:
+      contents: write # needed to push Git tags
     steps:
       - name: Checks out code
         uses: actions/checkout@v4
@@ -75,14 +73,13 @@ jobs:
           gpg-passphrase: MAVEN_CENTRAL_GPG_PASSPHRASE
 
       - name: Deploy SNAPSHOT / Release
-        uses: camunda-community-hub/community-action-maven-release@v1.2.1
+        uses: camunda-community-hub/community-action-maven-release@v2
         with:
           release-version: ${{ github.event.release.tag_name }}
           nexus-usr: ${{ secrets.NEXUS_USR }}
           nexus-psw: ${{ secrets.NEXUS_PSW }}
-          maven-usr: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_OSS_USR }}
-          maven-psw: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_OSS_PSW }}
-          maven-url: oss.sonatype.org
+          sonatype-central-portal-usr: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_CP_USR }}
+          sonatype-central-portal-psw: ${{ secrets.COMMUNITY_HUB_MAVEN_CENTRAL_CP_PSW }}
           maven-gpg-passphrase: ${{ secrets.MAVEN_CENTRAL_GPG_SIGNING_KEY_PASSPHRASE }}
           maven-auto-release-after-close: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -112,10 +109,9 @@ Sometimes you need to pass additional properties to your Maven build. In this ca
 
 # Auto-closing OSS Maven Central Staging Repository
 
-OSS Maven Central uses a two-phase procedure during release. After uploading the artifacts and running all checks, the repository needs to be explicitly
-closed. This second step is either performed manually, or can be automated by a setting of the action.
+Sonatype's Central Portal uses a two-phase procedure during release. After uploading the artifacts and running all checks, the deployment needs to be explicitly published/closed. This second step is either performed manually, or can be automated by a setting of the action.
 
-Please set the `maven-auto-release-after-close` to `true`, if you want to automatically close the repository and release remotely staged artifacts.
+Please set the `maven-auto-release-after-close` to `true`, if you want to automatically plublish the deployment and release remotely staged artifacts.
 
 # More info
 
