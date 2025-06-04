@@ -142,7 +142,7 @@ In order to effectively maintain a large number of repositories, an implementati
 In order to release a new version:
 
 - Create a new release and create a tag on-the-fly (e.g. `v1.0.13`)
-- Delete the existing `latest` and `v1` tags and re-create them, pointing to the the new tag (e.g. `v1.0.13`). This way, the new version will also be used in already existing actions of community extensions.
+- Delete the existing `v1` and/or `v2` tags and re-create them, pointing to the the new tag (e.g. `v1.0.13`). This way, the new version will also be used in already existing actions of community extensions.
 
 # Troubleshooting
 
