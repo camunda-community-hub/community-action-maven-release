@@ -32,18 +32,6 @@ inputs:
       Maven profile to configure the Maven Central release; typically set to "central-sonatype-publish".
 
       The default (since @v2) is "central-sonatype-publish", the new profile required for Sonatype's Central Portal.
-
-      If a module’s namespace isn’t migrated yet to Sonatype's Central Portal and the "central-sonatype-publish" profile is set,
-      the action (in @v2) will temporarily fall back to the deprecated "oss-maven-central" profile to keep publishing working.
-
-      This fallback is a temporary measure to smooth migration by letting users switch to the new profile immediately,
-      without needing to track migration timelines.
-
-      We strongly recommend switching to @v2 of this action (and the new default profile) right away to benefit from transparent patch releases
-      that will update this fallback behavior and remove it namespace by namespace as migration completes.
-
-      Note: The "central-sonatype-publish" profile is available in the latest version of the parent POM used.
-
       Please refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to
     required: false
     default: "central-sonatype-publish"
@@ -148,18 +136,6 @@ runs:
             "Refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to"
         fi
 
-        # Fallback to the deprecated profile if namespace is not migrated yet
-        # This is a temporary measure to smooth migration by letting users switch to the @v2 version of the action and new profile immediately
-        # The fallback will be removed namespace by namespace as migration completes
-        group_id=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
-        if [[ "$CENTRAL_RELEASE_PROFILE" == "$NEW_RELEASE_PROFILE_SINCE_V2" ]]; then
-          # Check if the groupId starts with io.camunda or org.camunda
-          if [[ "$group_id" == io.camunda* || "$group_id" == org.camunda* ]]; then
-            CENTRAL_RELEASE_PROFILE=$DEPRECATED_RELEASE_PROFILE_IN_V1
-            SONATYPE_CENTRAL_PORTAL_USR=$MAVEN_USR
-            SONATYPE_CENTRAL_PORTAL_PSW=$MAVEN_PSW
-          fi
-        fi
         {
           echo release-profile="${CENTRAL_RELEASE_PROFILE}"
           echo user="${SONATYPE_CENTRAL_PORTAL_USR}"
