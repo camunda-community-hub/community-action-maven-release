@@ -23,18 +23,19 @@ inputs:
     description: Release Version (usually tag name). If empty, a SNAPSHOT (with the currently configured version) will be deployed.
     required: false
     default: "latest"
-  release-profile:
+  release-profile: # deprecated
     description: Maven profile to be selected for the building release artifacts; typically "community-action-maven-release".
     required: false
     default: "community-action-maven-release"
+  community-deployment-activation:
+    description: Maven property to activate maven profile so that deployment is done in community nexus repositories
+    required: false
+    default: "Community"
   central-release-profile:
     description: |
-      Maven profile to configure the Maven Central release; typically set to "central-sonatype-publish".
-
-      The default (since @v2) is "central-sonatype-publish", the new profile required for Sonatype's Central Portal.
-      Please refer to the documentation for migration guidance: https://github.com/camunda-community-hub/community/blob/main/maintainers-reviewers/RELEASE.MD#migration-to-sonatype-central-portal--how-to
+      Maven profile to configure the Maven Central release; typically set to "sonatype-oss-release".
     required: false
-    default: "central-sonatype-publish"
+    default: "sonatype-oss-release"
   nexus-usr:
     description: CIB seven Nexus username
     required: true
@@ -83,7 +84,7 @@ runs:
       shell: bash
       env:
         CENTRAL_RELEASE_PROFILE: ${{ inputs.central-release-profile }}
-        NEW_RELEASE_PROFILE_SINCE_V2: central-sonatype-publish
+        NEW_RELEASE_PROFILE_SINCE_V2: sonatype-oss-release
         MAVEN_USR: ${{ inputs.maven-usr }}
         MAVEN_PSW: ${{ inputs.maven-psw }}
         SONATYPE_CENTRAL_PORTAL_USR: ${{ inputs.sonatype-central-portal-usr }}
@@ -114,7 +115,7 @@ runs:
         echo "Repo: ${GITHUB_REPOSITORY}"
         git config --global user.name "Release Bot"
         git config --global user.email "actions@github.com"
-        test -n "${{inputs.release-profile}}" && echo 'RELEASE_PROFILE=-P${{inputs.release-profile}}' >> "$GITHUB_ENV"
+        test -n "${{inputs.community-deployment-activation}}" && echo 'COMMUNITY_ACTIVATION=-D${{inputs.community-deployment-activation}}' >> "$GITHUB_ENV"
         test -n "${{steps.maven-central.outputs.release-profile}}" && echo 'CENTRAL_RELEASE_PROFILE=-P${{steps.maven-central.outputs.release-profile}}' >> "$GITHUB_ENV"
         test -n "${{inputs.camunda-release-profile}}" && echo 'CAMUNDA_RELEASE_PROFILE=-P${{inputs.camunda-release-profile}}' >> "$GITHUB_ENV"
         cp -v "${{ github.action_path }}/resources/settings.xml" "$HOME/.m2/"
@@ -189,16 +190,9 @@ runs:
         echo "::group::Publish SNAPSHOT"
         test -n "${{ inputs.release-version }}" && echo "::debug::Not publishing SNAPSHOT because release-version is set" && exit 0
 
-        echo "Publish SNAPSHOT to Camunda Artifactory using profiles ${{inputs.release-profile}}, ${{inputs.camunda-release-profile}}"
-        mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
-          ${RELEASE_PROFILE} ${CAMUNDA_RELEASE_PROFILE} deploy
-
-        # nexusUrl is ignored if the new `central-sonatype-publish` profile is used
-        # to be removed in @v3
-        echo "Publish SNAPSHOT to Maven Central using profiles ${{inputs.release-profile}}, ${{steps.maven-central.outputs.release-profile}}"
-        mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
-          -DnexusUrl="https://${{inputs.maven-url}}/" \
-          ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
+        echo "Publish SNAPSHOT to CIB seven Artifactory activating deployment for community with ${{inputs.release-profile}}, ${{inputs.camunda-release-profile}}"
+        mvn -T4 -U --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
+          ${COMMUNITY_ACTIVATION} ${CAMUNDA_RELEASE_PROFILE} deploy
 
     - name: Publish Maven Release
       env:
@@ -223,7 +217,7 @@ runs:
         # nexusUrl is ignored if the new `central-sonatype-publish` profile is used
         # to be removed in @v3
         echo "Deploy release to Maven Central using profiles ${{inputs.release-profile}}, ${{steps.maven-central.outputs.release-profile}}"
-        mvn -B --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
+        mvn -T4 -U --no-transfer-progress ${{ inputs.maven-additional-options }} -DskipTests ${{ inputs.maven-release-options }} \
           -DautoReleaseAfterClose=${{ inputs.maven-auto-release-after-close }} \
           -DnexusUrl="https://${{inputs.maven-url}}/" \
           ${RELEASE_PROFILE} ${CENTRAL_RELEASE_PROFILE} deploy
