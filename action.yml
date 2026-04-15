@@ -155,13 +155,16 @@ runs:
 
     - name: Run maven
       shell: bash
+      env:
+        NEXUS_USR: ${{ inputs.nexus-usr }}
+        NEXUS_PSW: ${{ inputs.nexus-psw }}
       run: |-
         test -z "${{ inputs.run-tests }}" && SKIP_TESTS="-DskipTests"
         mvn -B ${{ inputs.maven-additional-options }} ${{ inputs.maven-build-options }} package ${SKIP_TESTS}
 
     - name: Archive Test Results on Failure
       if: ${{ inputs.run-tests && failure() }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: test-results
         path: target/surefire-reports/
@@ -169,7 +172,7 @@ runs:
 
     - name: Publish Unit Test Results on Failure
       if: ${{ inputs.run-tests && failure() }}
-      uses: EnricoMi/publish-unit-test-result-action@v2.3.0
+      uses: EnricoMi/publish-unit-test-result-action@v2.23.0
       with:
         junit_files: target/surefire-reports/*.xml
 
@@ -207,7 +210,7 @@ runs:
             -d '{"commit_sha":"${GITHUB_SHA}","ref":"${GITHUB_REF}","sarif": "${COMPRESSED_SARIF}"}' || true
         fi
     - name: Actions tagger
-      uses: Actions-R-Us/actions-tagger@latest
+      uses: Actions-R-Us/actions-tagger@v2.0.3
       with:
         publish_latest_tag: true
 

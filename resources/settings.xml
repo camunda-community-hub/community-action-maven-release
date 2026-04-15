@@ -31,6 +31,11 @@
           <password>${env.NEXUS_PSW}</password>
         </server>
         <server>
+          <id>camunda-nexus-release</id>
+          <username>${env.NEXUS_USR}</username>
+          <password>${env.NEXUS_PSW}</password>
+        </server>
+        <server>
             <id>central</id>
             <username>${env.MAVEN_USR}</username>
             <password>${env.MAVEN_PSW}</password>
